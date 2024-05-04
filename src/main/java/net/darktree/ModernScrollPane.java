@@ -14,7 +14,7 @@ public class ModernScrollPane extends JScrollPane {
 	private static final int SCROLL_BAR_ALPHA_ROLLOVER = 100;
 	private static final int SCROLL_BAR_ALPHA = 50;
 	private static final int THUMB_SIZE = 8;
-	private static final int SB_SIZE = 10;
+	private static final int SCROLLBAR_SIZE = 10;
 	private static final Color THUMB_COLOR = Color.BLACK;
 
 	public ModernScrollPane(Component view) {
@@ -61,7 +61,7 @@ public class ModernScrollPane extends JScrollPane {
 
 				// vertical scroll bar
 				Rectangle vsbR = new Rectangle();
-				vsbR.width = SB_SIZE;
+				vsbR.width = SCROLLBAR_SIZE;
 				vsbR.height = availR.height - (hsbNeeded ? vsbR.width : 0);
 				vsbR.x = availR.x + availR.width - vsbR.width;
 				vsbR.y = availR.y;
@@ -72,7 +72,7 @@ public class ModernScrollPane extends JScrollPane {
 
 				// horizontal scroll bar
 				Rectangle hsbR = new Rectangle();
-				hsbR.height = SB_SIZE;
+				hsbR.height = SCROLLBAR_SIZE;
 				hsbR.width = availR.width - (vsbNeeded ? hsbR.height : 0);
 				hsbR.x = availR.x;
 				hsbR.y = availR.y + availR.height - hsbR.height;
@@ -103,16 +103,13 @@ public class ModernScrollPane extends JScrollPane {
 		return viewSize.getWidth() >= viewRect.getWidth();
 	}
 
-	/**
-	 * Class extending the BasicScrollBarUI and overrides all necessary methods
-	 */
 	private static class ModernScrollBarUI extends BasicScrollBarUI {
 
-		private JScrollPane sp;
+		private final JScrollPane pane;
 		public boolean draw = true;
 
-		public ModernScrollBarUI(ModernScrollPane sp) {
-			this.sp = sp;
+		public ModernScrollBarUI(ModernScrollPane pane) {
+			this.pane = pane;
 		}
 
 		@Override
@@ -155,7 +152,7 @@ public class ModernScrollPane extends JScrollPane {
 		@Override
 		protected void setThumbBounds(int x, int y, int width, int height) {
 			super.setThumbBounds(x, y, width, height);
-			sp.repaint();
+			pane.repaint();
 		}
 
 		/**
@@ -163,6 +160,7 @@ public class ModernScrollPane extends JScrollPane {
 		 */
 		private static class InvisibleScrollBarButton extends JButton {
 
+			@Serial
 			private static final long serialVersionUID = 1552427919226628689L;
 
 			private InvisibleScrollBarButton() {
