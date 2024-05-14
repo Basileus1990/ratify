@@ -6,6 +6,7 @@ import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
+import java.util.Scanner;
 
 public class Main extends JFrame {
 
@@ -115,7 +116,33 @@ public class Main extends JFrame {
 	}
 
 	public static void main(String[] args) {
-		try {
+		URPClient client = new URPClient("localhost");
+
+		while (!client.isConnected()) {
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+
+		System.out.println("Ready");
+
+		Scanner scanner = new Scanner(System.in);
+		while (client.isConnected()) {
+			String line = scanner.nextLine();
+			if (line.equals("exit")) {
+				break;
+			} else if (line.startsWith("join")) {
+				int gid = Integer.parseInt(line.split(" ")[1]);
+				int pass = Integer.parseInt(line.split(" ")[2]);
+				client.join(gid, pass);
+			}
+		}
+
+		client.close();
+
+		/*try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (Exception ex) {
 			System.err.println("Failed to initialize theme. Using fallback.");
@@ -125,6 +152,7 @@ public class Main extends JFrame {
 			Main app = new Main();
 			app.setVisible(true);
 		});
+		 */
 	}
 
 }
