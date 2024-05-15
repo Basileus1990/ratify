@@ -1,12 +1,14 @@
 package net.darktree;
 
+import net.darktree.URP.URPClient;
+import net.darktree.URP.URPMessage;
+
 import javax.swing.*;
 import javax.swing.text.*;
 import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
-import java.util.Scanner;
 
 public class Main extends JFrame {
 
@@ -116,33 +118,22 @@ public class Main extends JFrame {
 	}
 
 	public static void main(String[] args) {
+		//URPClient.interactive();
+
 		URPClient client = new URPClient("localhost");
+		client.waitForConnection(1000);
 
-		while (!client.isConnected()) {
-			try {
-				Thread.sleep(10);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
+		client.make();
 
-		System.out.println("Ready");
+		URPMessage received = client.receive(true);
+		System.out.println(received);
 
-		Scanner scanner = new Scanner(System.in);
-		while (client.isConnected()) {
-			String line = scanner.nextLine();
-			if (line.equals("exit")) {
-				break;
-			} else if (line.startsWith("join")) {
-				int gid = Integer.parseInt(line.split(" ")[1]);
-				int pass = Integer.parseInt(line.split(" ")[2]);
-				client.join(gid, pass);
-			}
-		}
+		client.broadcast("Hello World!", client.getUid());
 
+		client.quit();
 		client.close();
 
-		/*try {
+		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (Exception ex) {
 			System.err.println("Failed to initialize theme. Using fallback.");
@@ -152,7 +143,6 @@ public class Main extends JFrame {
 			Main app = new Main();
 			app.setVisible(true);
 		});
-		 */
 	}
 
 }
