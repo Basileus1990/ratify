@@ -1,10 +1,10 @@
-package net.darktree.URP;
+package net.darktree.urp;
+
+import net.darktree.urp.u2rmessage.*;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Scanner;
 
 public class URPClient extends URPClientHelper {
@@ -15,8 +15,8 @@ public class URPClient extends URPClientHelper {
     private Thread serverListenerThread = null;
     private boolean connected = false;
     private int uid = -1;
-    // used as fifo queue
-    private LinkedList<URPMessage> messages = new LinkedList<>();
+    private R2UBuffer r2u;
+    private U2RBuffer u2r;
 
     public URPClient(String hostname) {
         // initialize websocket connection
@@ -31,9 +31,13 @@ public class URPClient extends URPClientHelper {
 
         System.out.println("Successfully made connection to " + hostname + ":" + port);
 
+        r2u = new R2UBuffer();
+
         // start listening for server messages
         serverListenerThread = new Thread(this::serverListener);
         serverListenerThread.start();
+
+        u2r = new U2RBuffer(dataOut);
     }
 
     public boolean isConnected() {
@@ -42,6 +46,14 @@ public class URPClient extends URPClientHelper {
 
     public int getUid() {
         return uid;
+    }
+
+    public R2UBuffer getRxBuffer(){
+        return r2u;
+    }
+
+    public U2RBuffer getTxBuffer(){
+        return u2r;
     }
 
     public void waitForConnection(int timeout) {
@@ -56,110 +68,6 @@ public class URPClient extends URPClientHelper {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    public URPMessage receive(boolean wait){
-        if (wait) {
-            while (true) {
-                synchronized (messages) {
-                    try {
-                        messages.wait();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-
-                    URPMessage message = messages.poll();
-                    if (message != null) {
-                        return message;
-                    }
-                }
-            }
-        }
-        else{
-            synchronized (messages) {
-                return messages.poll();
-            }
-        }
-    }
-
-    public void make(){
-        try {
-            dataOut.writeByte(U2R.MAKE.getValue());
-        } catch (Exception e) {
-            System.out.println("Failed to send make request");
-        }
-    }
-
-    public void join(int gid, int pass) {
-        try {
-            dataOut.writeByte(U2R.JOIN.getValue());
-            NetUtils.writeIntLE(dataOut, gid);
-            NetUtils.writeIntLE(dataOut, pass);
-        } catch (Exception e) {
-            System.out.println("Failed to send join request");
-        }
-    }
-
-    public void quit() {
-        try {
-            dataOut.writeByte(U2R.QUIT.getValue());
-        } catch (Exception e) {
-            System.out.println("Failed to send quit request");
-        }
-    }
-
-    public void broadcast(String message, int exclude) {
-        broadcast(message.getBytes(), exclude);
-    }
-
-    public void broadcast(byte[] message, int exclude) {
-        try {
-            dataOut.writeByte(U2R.BROD.getValue());
-            NetUtils.writeIntLE(dataOut, exclude);
-            NetUtils.writeIntLE(dataOut, message.length);
-            dataOut.write(message);
-        } catch (Exception e) {
-            System.out.println("Failed to send broadcast request");
-        }
-    }
-
-    public void send(int uid, byte[] message) {
-        try {
-            dataOut.writeByte(U2R.SEND.getValue());
-            NetUtils.writeIntLE(dataOut, uid);
-            NetUtils.writeIntLE(dataOut, message.length);
-            dataOut.write(message);
-        } catch (Exception e) {
-            System.out.println("Failed to send message");
-        }
-    }
-
-    public void getSetting(int key) {
-        try {
-            dataOut.writeByte(U2R.GETS.getValue());
-            NetUtils.writeIntLE(dataOut, key);
-        } catch (Exception e) {
-            System.out.println("Failed to send getSettings request");
-        }
-    }
-
-    public void setSetting(int key, int value) {
-        try {
-            dataOut.writeByte(U2R.SETS.getValue());
-            NetUtils.writeIntLE(dataOut, key);
-            NetUtils.writeIntLE(dataOut, value);
-        } catch (Exception e) {
-            System.out.println("Failed to send setSettings request");
-        }
-    }
-
-    public void kick(int uid) {
-        try {
-            dataOut.writeByte(U2R.KICK.getValue());
-            NetUtils.writeIntLE(dataOut, uid);
-        } catch (Exception e) {
-            System.out.println("Failed to send kick request");
         }
     }
 
@@ -238,10 +146,7 @@ public class URPClient extends URPClientHelper {
                         textBuffer[textLen] = 0;
                         System.out.println("User #" + textUid + " said: '" + new String(textBuffer) + "'");
 
-                        synchronized (messages) {
-                            messages.add(new URPMessage(textUid, textBuffer));
-                            messages.notify();
-                        }
+                        r2u.addMessage(new R2UMessage(textUid, textBuffer));
                     }
                     default -> System.out.println("Unknown message id: " + id);
                 }
@@ -256,6 +161,7 @@ public class URPClient extends URPClientHelper {
     public void close() {
         try {
             serverListenerThread.interrupt();
+            u2r.close();
             dataIn.close();
             dataOut.close();
             socket.close();
@@ -284,18 +190,18 @@ public class URPClient extends URPClientHelper {
             } else if (line.startsWith("join")) {
                 int gid = Integer.parseInt(line.split(" ")[1]);
                 int pass = Integer.parseInt(line.split(" ")[2]);
-                client.join(gid, pass);
+                client.getTxBuffer().send(new U2RJoin(gid, pass), true);
             } else if (line.startsWith("quit")) {
-                client.quit();
+                client.getTxBuffer().send(new U2RQuit(), true);
             } else if (line.equals("make")) {
-                client.make();
+                client.getTxBuffer().send(new U2RMake(), true);
             } else if (line.startsWith("brod")) {
                 String message = line.substring(5);
-                client.broadcast(message.getBytes(), client.getUid());
+                client.getTxBuffer().send(new U2RBrod(message, client.getUid()), true);
             } else if (line.startsWith("send")) {
                 int uid = Integer.parseInt(line.split(" ")[1]);
                 String message = line.substring(6 + line.split(" ")[1].length());
-                client.send(uid, message.getBytes());
+                client.getTxBuffer().send(new U2RSend(uid, message), true);
             } else {
                 System.out.println("Unknown command");
             }

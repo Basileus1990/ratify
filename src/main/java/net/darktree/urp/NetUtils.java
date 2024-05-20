@@ -1,4 +1,4 @@
-package net.darktree.URP;
+package net.darktree.urp;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

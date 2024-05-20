@@ -1,10 +1,10 @@
-package net.darktree.URP;
+package net.darktree.urp;
 
-public class URPMessage {
+public class R2UMessage {
     private final int fromUid;
     private final byte[] data;
 
-    public URPMessage(int fromUid, byte[] data) {
+    public R2UMessage(int fromUid, byte[] data) {
         this.fromUid = fromUid;
         this.data = data;
     }
@@ -19,9 +19,6 @@ public class URPMessage {
 
     @Override
     public String toString() {
-        return "URPMessage{" +
-                "fromUid=" + fromUid +
-                ", data=" + new String(data) +
-                '}';
+        return "R2UMessage{ fromUid=" + fromUid + ", data=" + new String(data) + '}';
     }
 }

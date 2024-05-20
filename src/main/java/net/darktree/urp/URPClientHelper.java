@@ -1,4 +1,4 @@
-package net.darktree.URP;
+package net.darktree.urp;
 
 public class URPClientHelper {
     protected enum R2U {
@@ -22,36 +22,6 @@ public class URPClientHelper {
 
         static R2U fromInt(int value) {
             for (R2U type : R2U.values()) {
-                if (type.getValue() == value) {
-                    return type;
-                }
-            }
-            return null;
-        }
-    }
-
-    protected enum U2R {
-        MAKE(0x00),
-        JOIN(0x01),
-        QUIT(0x02),
-        BROD(0x03),
-        SEND(0x04),
-        GETS(0x05),
-        SETS(0x06),
-        KICK(0x07);
-
-        private final int value;
-
-        U2R(int value) {
-            this.value = value;
-        }
-
-        public int getValue() {
-            return value;
-        }
-
-        static U2R fromInt(int value) {
-            for (U2R type : U2R.values()) {
                 if (type.getValue() == value) {
                     return type;
                 }

@@ -1,7 +1,11 @@
 package net.darktree;
 
-import net.darktree.URP.URPClient;
-import net.darktree.URP.URPMessage;
+import net.darktree.urp.URPClient;
+import net.darktree.urp.R2UMessage;
+import net.darktree.urp.u2rmessage.U2RBrod;
+import net.darktree.urp.u2rmessage.U2RJoin;
+import net.darktree.urp.u2rmessage.U2RMake;
+import net.darktree.urp.u2rmessage.U2RQuit;
 
 import javax.swing.*;
 import javax.swing.text.*;
@@ -9,12 +13,16 @@ import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
+import java.util.Scanner;
 
 public class Main extends JFrame {
 
 	private JButton button1;
 	private JButton button2;
 	private JButton button3;
+	private static Typewriter typewriter = null;
+	private static KeywordStyledDocument styled = null;
+	private static URPClient client = null;
 
 	private String getExampleText() {
 		String content = "Hello World!\n\n";
@@ -43,10 +51,10 @@ public class Main extends JFrame {
 		registerLocalFont("fonts/JetBrainsMono-Regular.ttf");
 		Font font = new Font("JetBrains Mono Regular", Font.PLAIN, 13);
 
-		System.out.println("Available Fonts:");
-		for (Font name : env.getAllFonts()) {
-			System.out.println(" * " + name.getName());
-		}
+		//System.out.println("Available Fonts:");
+		//for (Font name : env.getAllFonts()) {
+		//	System.out.println(" * " + name.getName());
+		//}
 
 		// default text style
 		StyleContext styleContext = new StyleContext();
@@ -74,7 +82,10 @@ public class Main extends JFrame {
 		wrapperPanel.setLayout(new GridLayout(1, 1));
 		wrapperPanel.setPreferredSize(new Dimension(500, 500));
 
-		KeywordStyledDocument styled = new KeywordStyledDocument(defaultStyle, highlightStyle);
+		styled = new KeywordStyledDocument(defaultStyle, highlightStyle, ((offset, text) -> {
+			System.out.println("Me: Offset: " + offset + " Text: " + text);
+			typewriter.write(offset, text);
+		}));
 
 		try {
 			styled.insertString(0, getExampleText(), null);
@@ -120,18 +131,38 @@ public class Main extends JFrame {
 	public static void main(String[] args) {
 		//URPClient.interactive();
 
-		URPClient client = new URPClient("localhost");
+		/*URPClient client = new URPClient("localhost");
 		client.waitForConnection(1000);
 
-		client.make();
+		client.getTxBuffer().send(new U2RMake(), false);
 
-		URPMessage received = client.receive(true);
+		R2UMessage received = client.getRxBuffer().receive(true);
 		System.out.println(received);
 
-		client.broadcast("Hello World!", client.getUid());
+		client.getTxBuffer().send(new U2RBrod("Hello World!", client.getUid()), false);
+		String characters = "Hello World!";
+		for (int i = 0; i < characters.length(); i++) {
+			client.getTxBuffer().send(new U2RBrod(String.valueOf(characters.charAt(i)), client.getUid()), false);
+		}
+		client.getTxBuffer().flush();
 
-		client.quit();
+		client.getTxBuffer().send(new U2RQuit(), true);
 		client.close();
+		 */
+		client = new URPClient("localhost");
+		client.waitForConnection(1000);
+
+		Scanner scanner = new Scanner(System.in);
+		String line = scanner.nextLine();
+
+		if (line.startsWith("join")) {
+			int gid = Integer.parseInt(line.split(" ")[1]);
+			client.getTxBuffer().send(new U2RJoin(gid, 0), true);
+		}
+		else if (line.equals("make")) {
+			client.getTxBuffer().send(new U2RMake(), true);
+		}
+		typewriter = new Typewriter(client);
 
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -142,6 +173,15 @@ public class Main extends JFrame {
 		SwingUtilities.invokeLater(() -> {
 			Main app = new Main();
 			app.setVisible(true);
+		});
+
+		typewriter.listen((offset, text) -> {
+			try {
+				styled.remoteInsert(offset, text);
+			} catch (BadLocationException e) {
+				e.printStackTrace();
+			}
+			System.out.println("Other: Offset: " + offset + " Text: " + text);
 		});
 	}
 

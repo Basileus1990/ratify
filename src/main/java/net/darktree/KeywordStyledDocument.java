@@ -10,6 +10,7 @@ public class KeywordStyledDocument extends DefaultStyledDocument  {
 
 	private Style defaultStyle;
 	private Style hightlightStyle;
+	private OnTypedCallback onTypedCallback;
 
 	private final static Set<String> KEYWORDS = Set.of(
 			"CROSS", "CURRENT_DATE", "CURRENT_TIME", "CURRENT_TIMESTAMP",
@@ -21,13 +22,20 @@ public class KeywordStyledDocument extends DefaultStyledDocument  {
 			"SYSTIMESTAMP", "TODAY", "TRUE", "UNION", "UNIQUE", "WHERE"
 	);
 
-	public KeywordStyledDocument(Style defaultStyle, Style hightlightStyle) {
+	public KeywordStyledDocument(Style defaultStyle, Style hightlightStyle, OnTypedCallback onTypedCallback) {
 		this.defaultStyle =  defaultStyle;
 		this.hightlightStyle = hightlightStyle;
+		this.onTypedCallback = onTypedCallback;
 	}
 
 	public void insertString(int offset, String str, AttributeSet a) throws BadLocationException {
-		super.insertString(offset, str, a);
+		//super.insertString(offset, str, a);
+		onTypedCallback.onTyped(offset, str);
+		//refreshDocument();
+	}
+
+	public void remoteInsert(int offset, String str) throws BadLocationException {
+		super.insertString(offset, str, defaultStyle);
 		refreshDocument();
 	}
 
