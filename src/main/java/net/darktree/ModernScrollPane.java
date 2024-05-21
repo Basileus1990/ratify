@@ -15,7 +15,7 @@ public class ModernScrollPane extends JScrollPane {
 	private static final int SCROLL_BAR_ALPHA = 50;
 	private static final int THUMB_SIZE = 8;
 	private static final int SCROLLBAR_SIZE = 10;
-	private static final Color THUMB_COLOR = Color.BLACK;
+	private static final Color THUMB_COLOR = Color.WHITE;
 
 	public ModernScrollPane(Component view) {
 		this(view, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -94,13 +94,13 @@ public class ModernScrollPane extends JScrollPane {
 	private boolean isVerticalScrollBarfNecessary() {
 		Rectangle viewRect = viewport.getViewRect();
 		Dimension viewSize = viewport.getViewSize();
-		return viewSize.getHeight() >= viewRect.getHeight();
+		return viewSize.getHeight() > viewRect.getHeight();
 	}
 
 	private boolean isHorizontalScrollBarNecessary() {
 		Rectangle viewRect = viewport.getViewRect();
 		Dimension viewSize = viewport.getViewSize();
-		return viewSize.getWidth() >= viewRect.getWidth();
+		return viewSize.getWidth() > viewRect.getWidth();
 	}
 
 	private static class ModernScrollBarUI extends BasicScrollBarUI {
