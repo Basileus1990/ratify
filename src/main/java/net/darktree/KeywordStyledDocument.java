@@ -1,16 +1,14 @@
 package net.darktree;
 
 import java.util.*;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.DefaultStyledDocument;
-import javax.swing.text.Style;
+import javax.swing.text.*;
 
 public class KeywordStyledDocument extends DefaultStyledDocument  {
 
 	private Style defaultStyle;
 	private Style hightlightStyle;
 	private OnTypedCallback onTypedCallback;
+	private JTextComponent textComponent;
 
 	private final static Set<String> KEYWORDS = Set.of(
 			"CROSS", "CURRENT_DATE", "CURRENT_TIME", "CURRENT_TIMESTAMP",
@@ -30,13 +28,21 @@ public class KeywordStyledDocument extends DefaultStyledDocument  {
 
 	public void insertString(int offset, String str, AttributeSet a) throws BadLocationException {
 		//super.insertString(offset, str, a);
-		onTypedCallback.onTyped(offset, str);
+		onTypedCallback.onTyped(offset, str, false);
 		//refreshDocument();
 	}
 
-	public void remoteInsert(int offset, String str) throws BadLocationException {
+	public void setJTextComponent(JTextComponent textComponent) {
+		this.textComponent = textComponent;
+	}
+
+	public void remoteInsert(int offset, String str, boolean moveCursor) throws BadLocationException {
 		super.insertString(offset, str, defaultStyle);
 		refreshDocument();
+
+		if (moveCursor) {
+			textComponent.setCaretPosition(offset + str.length());
+		}
 	}
 
 	public void remove(int offs, int len) throws BadLocationException {

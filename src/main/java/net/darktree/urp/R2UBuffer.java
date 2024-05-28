@@ -3,7 +3,7 @@ package net.darktree.urp;
 import java.util.LinkedList;
 
 public class R2UBuffer {
-    private LinkedList<R2UMessage> messages = new LinkedList<>();
+    private final LinkedList<R2UMessage> messages = new LinkedList<>();
 
     public void addMessage(R2UMessage message) {
         synchronized (messages){
@@ -16,10 +16,12 @@ public class R2UBuffer {
         if (wait) {
             while (true) {
                 synchronized (messages) {
-                    try {
-                        messages.wait();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                    if (messages.isEmpty()) {
+                        try {
+                            messages.wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
 
                     R2UMessage message = messages.poll();

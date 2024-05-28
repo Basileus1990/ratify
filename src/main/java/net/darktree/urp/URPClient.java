@@ -76,13 +76,11 @@ public class URPClient extends URPClientHelper {
 
         try {
             while (socket.isConnected() && !serverListenerThread.isInterrupted()) {
-                R2U id = null;
+                R2UMessage.R2U id = null;
                 while (socket.isConnected() && !serverListenerThread.isInterrupted()) {
-                    if (dataIn.available() > 0) {
-                        id = R2U.fromInt(dataIn.readByte());
-                        if (id != null){
-                            break;
-                        }
+                    id = R2UMessage.R2U.fromInt(dataIn.readByte());
+                    if (id != null){
+                        break;
                     }
                 }
 
@@ -113,29 +111,45 @@ public class URPClient extends URPClientHelper {
 
                         System.out.println("Received URP welcome, using protocol v" + ver + "." + rev + " (uid: " + uid + ")");
                         System.out.println("Server identifies as: " + new String(messageTrimmed));
+
+                        r2u.addMessage(new R2UMessage(R2UMessage.R2U.WELC, -1, new byte[]{(byte) ver, (byte) rev}));
+
                         connected = true;
                     }
                     case STAT -> {
                         byte sta = dataIn.readByte();
                         System.out.println("Your status changed to: " + roleToString(sta));
+
+                        r2u.addMessage(new R2UMessage(R2UMessage.R2U.STAT, -1, new byte[]{sta}));
                     }
                     case JOIN -> {
                         int joinUid = NetUtils.readIntLE(dataIn);
                         System.out.println("User #" + joinUid + " joined");
+
+                        r2u.addMessage(new R2UMessage(R2UMessage.R2U.JOIN, joinUid, new byte[0]));
                     }
                     case LEFT -> {
                         int leftUid = NetUtils.readIntLE(dataIn);
                         System.out.println("User #" + leftUid + " left");
+
+                        r2u.addMessage(new R2UMessage(R2UMessage.R2U.LEFT, leftUid, new byte[0]));
                     }
                     case VALS -> {
                         int key = NetUtils.readIntLE(dataIn);
                         int val = NetUtils.readIntLE(dataIn);
                         System.out.println("Setting '" + key + "' is set to '" + val + "'");
+
+                        byte[] valBuffer = new byte[8];
+                        NetUtils.writeIntLE(valBuffer, val,0);
+                        NetUtils.writeIntLE(valBuffer, key, 4);
+                        r2u.addMessage(new R2UMessage(R2UMessage.R2U.VALS, -1, valBuffer));
                     }
                     case MADE -> {
                         byte madeStatus = dataIn.readByte();
                         int madeGid = NetUtils.readIntLE(dataIn);
                         System.out.println(madeCodeToString(madeStatus, madeGid));
+
+                        r2u.addMessage(new R2UMessage(R2UMessage.R2U.MADE, madeStatus, new byte[]{(byte) madeGid}));
                     }
                     case TEXT -> {
                         int textUid = NetUtils.readIntLE(dataIn);
@@ -146,7 +160,7 @@ public class URPClient extends URPClientHelper {
                         textBuffer[textLen] = 0;
                         System.out.println("User #" + textUid + " said: '" + new String(textBuffer) + "'");
 
-                        r2u.addMessage(new R2UMessage(textUid, textBuffer));
+                        r2u.addMessage(new R2UMessage(R2UMessage.R2U.TEXT, textUid, textBuffer));
                     }
                     default -> System.out.println("Unknown message id: " + id);
                 }

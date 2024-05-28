@@ -24,7 +24,7 @@ public class Main extends JFrame {
 	private static KeywordStyledDocument styled = null;
 	private static URPClient client = null;
 
-	private String getExampleText() {
+	private static String getExampleText() {
 		String content = "Hello World!\n\n";
 		content += "SELECT * FROM Examples WHERE Ratify = TRUE;\n\n";
 
@@ -82,20 +82,16 @@ public class Main extends JFrame {
 		wrapperPanel.setLayout(new GridLayout(1, 1));
 		wrapperPanel.setPreferredSize(new Dimension(500, 500));
 
-		styled = new KeywordStyledDocument(defaultStyle, highlightStyle, ((offset, text) -> {
+		styled = new KeywordStyledDocument(defaultStyle, highlightStyle, ((offset, text, moveCursor) -> {
 			System.out.println("Me: Offset: " + offset + " Text: " + text);
 			typewriter.write(offset, text);
 		}));
 
-		try {
-			styled.insertString(0, getExampleText(), null);
-		} catch (Throwable e) {
-			e.printStackTrace();
-		}
-
 		// the actual textbox
 		final JTextPane pane = new JTextPane(styled);
 		pane.setFont(font);
+
+		styled.setJTextComponent(pane);
 
 		// scroll bars panel
 		JScrollPane scrollPane = new ModernScrollPane(pane);
@@ -149,20 +145,6 @@ public class Main extends JFrame {
 		client.getTxBuffer().send(new U2RQuit(), true);
 		client.close();
 		 */
-		client = new URPClient("localhost");
-		client.waitForConnection(1000);
-
-		Scanner scanner = new Scanner(System.in);
-		String line = scanner.nextLine();
-
-		if (line.startsWith("join")) {
-			int gid = Integer.parseInt(line.split(" ")[1]);
-			client.getTxBuffer().send(new U2RJoin(gid, 0), true);
-		}
-		else if (line.equals("make")) {
-			client.getTxBuffer().send(new U2RMake(), true);
-		}
-		typewriter = new Typewriter(client);
 
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -175,14 +157,52 @@ public class Main extends JFrame {
 			app.setVisible(true);
 		});
 
-		typewriter.listen((offset, text) -> {
+		client = new URPClient("localhost");
+		client.waitForConnection(1000);
+
+		Scanner scanner = new Scanner(System.in);
+		String line = scanner.nextLine();
+
+		if (line.startsWith("join")) {
+			int gid = Integer.parseInt(line.split(" ")[1]);
+			client.getTxBuffer().send(new U2RJoin(gid, 0), true);
+			typewriter = new Typewriter(client, (offset, text, moveCursor) -> {
+				try {
+					styled.remoteInsert(offset, text, moveCursor);
+				} catch (BadLocationException e) {
+					e.printStackTrace();
+				}
+				System.out.println("Other: Offset: " + offset + " Text: " + text);
+			});
+		}
+		else if (line.equals("make")) {
 			try {
-				styled.remoteInsert(offset, text);
-			} catch (BadLocationException e) {
+				styled.remoteInsert(0, getExampleText(), false);
+			} catch (Throwable e) {
 				e.printStackTrace();
 			}
-			System.out.println("Other: Offset: " + offset + " Text: " + text);
-		});
+
+			client.getTxBuffer().send(new U2RMake(), true);
+			typewriter = new Host(client, (offset, text, moveCursor) -> {
+				try {
+					styled.remoteInsert(offset, text, moveCursor);
+				} catch (BadLocationException e) {
+					e.printStackTrace();
+				}
+				System.out.println("Other: Offset: " + offset + " Text: " + text);
+			}, () -> {
+				try {
+					return styled.getText(0, styled.getLength());
+				} catch (BadLocationException e) {
+					e.printStackTrace();
+					return "";
+				}
+			});
+		}
+
+
+
+		typewriter.listen();
 	}
 
 }
