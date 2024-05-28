@@ -22,7 +22,7 @@ public class Typewriter {
             R2UMessage message = client.getRxBuffer().receive(true);
             if (message.getType() == R2UMessage.R2U.TEXT && new String(message.getData()).startsWith("ti")) {
                 hostUid = message.getFromUid();
-                onTyped.onTyped(0, new String(message.getData()).substring(2), false);
+                onTyped.onTyped(0, new String(message.getData()).substring(2));
                 System.out.println("Host UID: " + hostUid);
                 break;
             }
@@ -41,8 +41,7 @@ public class Typewriter {
         int offset = Integer.parseInt(new String(message.getData()).substring(firstSpace + 1, secondSpace));
 
         String text = new String(message.getData()).substring(secondSpace + 1);
-        boolean moveCursor = typedBy == client.getUid();
-        callback.onTyped(offset, text, moveCursor);
+        callback.onTyped(offset, text);
     }
 
     public void listen() {

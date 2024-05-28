@@ -82,7 +82,7 @@ public class Main extends JFrame {
 		wrapperPanel.setLayout(new GridLayout(1, 1));
 		wrapperPanel.setPreferredSize(new Dimension(500, 500));
 
-		styled = new KeywordStyledDocument(defaultStyle, highlightStyle, ((offset, text, moveCursor) -> {
+		styled = new KeywordStyledDocument(defaultStyle, highlightStyle, ((offset, text) -> {
 			System.out.println("Me: Offset: " + offset + " Text: " + text);
 			typewriter.write(offset, text);
 		}));
@@ -166,9 +166,9 @@ public class Main extends JFrame {
 		if (line.startsWith("join")) {
 			int gid = Integer.parseInt(line.split(" ")[1]);
 			client.getTxBuffer().send(new U2RJoin(gid, 0), true);
-			typewriter = new Typewriter(client, (offset, text, moveCursor) -> {
+			typewriter = new Typewriter(client, (offset, text) -> {
 				try {
-					styled.remoteInsert(offset, text, moveCursor);
+					styled.remoteInsert(offset, text);
 				} catch (BadLocationException e) {
 					e.printStackTrace();
 				}
@@ -177,15 +177,15 @@ public class Main extends JFrame {
 		}
 		else if (line.equals("make")) {
 			try {
-				styled.remoteInsert(0, getExampleText(), false);
+				styled.remoteInsert(0, getExampleText());
 			} catch (Throwable e) {
 				e.printStackTrace();
 			}
 
 			client.getTxBuffer().send(new U2RMake(), true);
-			typewriter = new Host(client, (offset, text, moveCursor) -> {
+			typewriter = new Host(client, (offset, text) -> {
 				try {
-					styled.remoteInsert(offset, text, moveCursor);
+					styled.remoteInsert(offset, text);
 				} catch (BadLocationException e) {
 					e.printStackTrace();
 				}

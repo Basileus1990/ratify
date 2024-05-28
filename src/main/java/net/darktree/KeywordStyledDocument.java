@@ -28,7 +28,8 @@ public class KeywordStyledDocument extends DefaultStyledDocument  {
 
 	public void insertString(int offset, String str, AttributeSet a) throws BadLocationException {
 		//super.insertString(offset, str, a);
-		onTypedCallback.onTyped(offset, str, false);
+		onTypedCallback.onTyped(offset, str);
+		textComponent.setCaretPosition(offset + str.length());
 		//refreshDocument();
 	}
 
@@ -36,12 +37,11 @@ public class KeywordStyledDocument extends DefaultStyledDocument  {
 		this.textComponent = textComponent;
 	}
 
-	public void remoteInsert(int offset, String str, boolean moveCursor) throws BadLocationException {
+	public void remoteInsert(int offset, String str) throws BadLocationException {
 		super.insertString(offset, str, defaultStyle);
 		refreshDocument();
-
-		if (moveCursor) {
-			textComponent.setCaretPosition(offset + str.length());
+		if (offset + str.length() < textComponent.getCaretPosition()) {
+			textComponent.setCaretPosition(textComponent.getCaretPosition() + str.length());
 		}
 	}
 
