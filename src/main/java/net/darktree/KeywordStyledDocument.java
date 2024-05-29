@@ -1,6 +1,7 @@
 package net.darktree;
 
 import java.util.*;
+import javax.swing.*;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
@@ -8,8 +9,9 @@ import javax.swing.text.Style;
 
 public class KeywordStyledDocument extends DefaultStyledDocument  {
 
-	private Style defaultStyle;
-	private Style hightlightStyle;
+	private final Style defaultStyle;
+	private final Style hightlightStyle;
+	private final JPanel wrapper;
 
 	private final static Set<String> KEYWORDS = Set.of(
 			"CROSS", "CURRENT_DATE", "CURRENT_TIME", "CURRENT_TIMESTAMP",
@@ -21,20 +23,25 @@ public class KeywordStyledDocument extends DefaultStyledDocument  {
 			"SYSTIMESTAMP", "TODAY", "TRUE", "UNION", "UNIQUE", "WHERE"
 	);
 
-	public KeywordStyledDocument(Style defaultStyle, Style hightlightStyle) {
+	public KeywordStyledDocument(Style defaultStyle, Style hightlightStyle, JPanel wrapper) {
 		this.defaultStyle =  defaultStyle;
 		this.hightlightStyle = hightlightStyle;
+		this.wrapper = wrapper;
 	}
 
+	// This method is being invoked every time when user writes in the code panel
 	public void insertString(int offset, String str, AttributeSet a) throws BadLocationException {
 		super.insertString(offset, str, a);
 		refreshDocument();
+
 	}
 
+	// This method is being invoked every time when user removes in the code panel
 	public void remove(int offs, int len) throws BadLocationException {
 		super.remove(offs, len);
 		refreshDocument();
 	}
+
 
 	private synchronized void refreshDocument() throws BadLocationException {
 		String text = getText(0, getLength());
@@ -45,6 +52,8 @@ public class KeywordStyledDocument extends DefaultStyledDocument  {
 		for(Word word : list) {
 			setCharacterAttributes(word.position, word.word.length(), hightlightStyle, true);
 		}
+
+		wrapper.repaint();
 	}
 
 	private static List<Word> processWords(String content) {

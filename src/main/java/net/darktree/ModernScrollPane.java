@@ -7,14 +7,10 @@ import java.awt.*;
 import java.io.Serial;
 
 public class ModernScrollPane extends JScrollPane {
-
-	@Serial
-	private static final long serialVersionUID = 8607734981506765935L;
-
 	private static final int SCROLL_BAR_ALPHA_ROLLOVER = 100;
 	private static final int SCROLL_BAR_ALPHA = 50;
 	private static final int THUMB_SIZE = 8;
-	private static final int SCROLLBAR_SIZE = 10;
+	public static final int SCROLLBAR_SIZE = 10;
 	private static final Color THUMB_COLOR = Color.WHITE;
 
 	public ModernScrollPane(Component view) {
@@ -39,7 +35,6 @@ public class ModernScrollPane extends JScrollPane {
 		horizontalScrollBar.setUI(new ModernScrollBarUI(this));
 
 		setLayout(new ScrollPaneLayout() {
-			private static final long serialVersionUID = 5740408979909014146L;
 
 			@Override
 			public void layoutContainer(Container parent) {
@@ -159,9 +154,6 @@ public class ModernScrollPane extends JScrollPane {
 		 * Invisible Buttons, to hide scroll bar buttons
 		 */
 		private static class InvisibleScrollBarButton extends JButton {
-
-			@Serial
-			private static final long serialVersionUID = 1552427919226628689L;
 
 			private InvisibleScrollBarButton() {
 				setOpaque(false);
