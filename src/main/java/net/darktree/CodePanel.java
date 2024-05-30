@@ -10,11 +10,10 @@ public class CodePanel extends JPanel {
 
     private final KeywordStyledDocument styledDocument;
 
-
-    CodePanel(Font font, Style defaultStyle, Style highlightStyle) {
+    CodePanel(Font font, Style defaultStyle, Style highlightStyle, KeywordStyledDocument styledDocument) {
         setLayout(new GridLayout(1, 1));
 
-        styledDocument = new KeywordStyledDocument(defaultStyle, highlightStyle, this);
+        this.styledDocument = styledDocument;
 
         JTextPane pane = getTextPane(font);
 
@@ -25,20 +24,11 @@ public class CodePanel extends JPanel {
         // TODO: Add smooth scrolling
         //scrollPane.getVerticalScrollBar().addMouseWheelListener(new SmoothMouseWheelListener());
 
-
-        // link it all together
         add(scrollPane, BorderLayout.CENTER);
     }
 
-    public void insertString(int offset, String str, AttributeSet attributeSet) throws BadLocationException {
-        styledDocument.insertString(offset, str, attributeSet);
-    }
-
-    public void remove(int offs, int len) throws BadLocationException {
-        styledDocument.remove(offs, len);
-    }
-
     private JTextPane getTextPane(Font font) {
+        // Overridden methods for disabling wrapping text
         JTextPane pane = new JTextPane(styledDocument) {
             public boolean getScrollableTracksViewportWidth() {
                 return false;
@@ -51,6 +41,7 @@ public class CodePanel extends JPanel {
                 super.setSize( d );
             }
         };
+
         pane.setFont(font);
         pane.setCaretColor(Color.WHITE);
         pane.setBorder(BorderFactory.createEmptyBorder(5, 5, ModernScrollPane.SCROLLBAR_SIZE, ModernScrollPane.SCROLLBAR_SIZE));

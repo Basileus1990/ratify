@@ -18,11 +18,12 @@ public class Main extends JFrame {
 
 		MainWindow mainWindow = new MainWindow();
 		try {
-			mainWindow.codePanel.insertString(0, getExampleText(), null);
-		} catch (BadLocationException ex) {
-			ex.printStackTrace();
+			mainWindow.OpenFile("src/main/java/net/darktree/Main.java");
+			mainWindow.OpenFile("src/main/java/net/darktree/KeywordStyledDocument.java");
+//			mainWindow.OpenFile("src/main/java/net/darktree/Main.java");
+		} catch (Exception ex) {
+			throw new RuntimeException(ex);
 		}
-
 
 		SwingUtilities.invokeLater(() -> {
 			mainWindow.setVisible(true);
