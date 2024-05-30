@@ -1,11 +1,6 @@
 package net.darktree;
 
 import javax.swing.*;
-import javax.swing.text.*;
-import java.awt.*;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Objects;
 
 public class Main extends JFrame {
 
@@ -18,9 +13,7 @@ public class Main extends JFrame {
 
 		MainWindow mainWindow = new MainWindow();
 		try {
-			mainWindow.OpenFile("src/main/java/net/darktree/Main.java");
-			mainWindow.OpenFile("src/main/java/net/darktree/KeywordStyledDocument.java");
-//			mainWindow.OpenFile("src/main/java/net/darktree/Main.java");
+			mainWindow.openFile("src/main/java/net/darktree/Main.java");
 		} catch (Exception ex) {
 			throw new RuntimeException(ex);
 		}
@@ -40,5 +33,4 @@ public class Main extends JFrame {
 
 		return content;
 	}
-
 }

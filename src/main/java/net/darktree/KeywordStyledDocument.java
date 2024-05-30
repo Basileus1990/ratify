@@ -67,6 +67,12 @@ public class KeywordStyledDocument extends DefaultStyledDocument  {
 		refreshDocument();
 	}
 
+	public void save() throws IOException {
+		// Ignoring the error because the offset 0 is always valid
+		try {
+			Files.write(Paths.get(filePath), getText(0, getLength()).getBytes());
+		} catch (BadLocationException ignored) {}
+	}
 
 	private synchronized void refreshDocument() throws BadLocationException {
 		String text = getText(0, getLength());

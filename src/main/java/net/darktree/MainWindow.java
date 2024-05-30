@@ -1,19 +1,25 @@
 package net.darktree;
 
 import javax.swing.*;
+import javax.swing.plaf.basic.DefaultMenuLayout;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 public class MainWindow extends JFrame {
 
-    private Map<String, KeywordStyledDocument> openDocuments = new HashMap<>();
+    private KeywordStyledDocument currentDocument = null;
+    private final Map<String, KeywordStyledDocument> openDocuments = new HashMap<>();
 
     private final Style defaultStyle;
     private final Style highlightStyle;
@@ -59,22 +65,110 @@ public class MainWindow extends JFrame {
         codePanelWrapper = new JPanel(new BorderLayout());
         add(codePanelWrapper, BorderLayout.CENTER);
 
+        // setting the save(ctrl+s) action
+        KeyStroke saveKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK);
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(saveKeyStroke, "saveCurrentFile");
+        getRootPane().getActionMap().put("saveCurrentFile", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                saveCurrentFile();
+            }
+        });
+
+        addMenuBar();
+
         pack();
         setLocationRelativeTo(null);
     }
 
-    public void OpenFile(String path) throws IOException {
-        KeywordStyledDocument displayedDocument;
+    public void openFile(String path) throws IOException {
         if (openDocuments.containsKey(path)) {
-            displayedDocument = openDocuments.get(path);
+            currentDocument = openDocuments.get(path);
         } else {
-            displayedDocument = new KeywordStyledDocument(defaultFont, defaultStyle, highlightStyle, path);
-            openDocuments.put(path, displayedDocument);
+            currentDocument = new KeywordStyledDocument(defaultFont, defaultStyle, highlightStyle, path);
+            openDocuments.put(path, currentDocument);
         }
 
         codePanelWrapper.removeAll();
-        codePanelWrapper.add(displayedDocument.getPanel(), BorderLayout.CENTER);
+        codePanelWrapper.add(currentDocument.getPanel(), BorderLayout.CENTER);
 
-        setTitle("Ratify | " + displayedDocument.getFileName());
+        setTitle("Ratify | " + currentDocument.getFileName());
+
+        codePanelWrapper.revalidate();
+        codePanelWrapper.repaint();
+    }
+
+    private void saveCurrentFile() {
+        try {
+            currentDocument.save();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void chooseAndOpenFile() {
+        Optional<String> pathOpt = chooseFileAndGetPath();
+        if (pathOpt.isEmpty()) {
+            return;
+        }
+
+        String path = pathOpt.get();
+        try {
+            openFile(path);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private Optional<String> chooseFileAndGetPath() {
+        FileDialog dialog = new FileDialog((Frame)null, "Select file to open");
+        dialog.setMode(FileDialog.LOAD);
+        dialog.setVisible(true);
+
+        String path = dialog.getDirectory() + dialog.getFile();
+        dialog.dispose();
+
+        if ("nullnull".equals(path)) {
+            return Optional.empty();
+        }
+
+        return Optional.of(path.substring(System.getProperty("user.dir").length() + 1));
+    }
+
+    private void addMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+        menuBar.setLayout(new DefaultMenuLayout(menuBar, BoxLayout.X_AXIS));
+
+        JMenu file = new JMenu("File");
+        JMenu sharing = new JMenu("Sharing");
+
+        JMenuItem openMenuItem = new JMenuItem("Open");
+        openMenuItem.addActionListener(e -> {
+            chooseAndOpenFile();
+        });
+
+        JMenuItem saveMenuItem = new JMenuItem("Save");
+        saveMenuItem.addActionListener(e -> {
+            saveCurrentFile();
+        });
+
+        JMenuItem hostMenuItem = new JMenuItem("Host");
+        hostMenuItem.addActionListener(e -> {
+            System.out.println("Host");
+        });
+
+        JMenuItem joinMenuItem = new JMenuItem("Join");
+        joinMenuItem.addActionListener(e -> {
+            System.out.println("Join");
+        });
+
+        file.add(openMenuItem);
+        file.add(saveMenuItem);
+        sharing.add(hostMenuItem);
+        sharing.add(joinMenuItem);
+
+        menuBar.add(file);
+        menuBar.add(sharing);
+        setJMenuBar(menuBar);
     }
 }
