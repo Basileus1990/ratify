@@ -7,15 +7,11 @@ import java.awt.*;
 import java.io.Serial;
 
 public class ModernScrollPane extends JScrollPane {
-
-	@Serial
-	private static final long serialVersionUID = 8607734981506765935L;
-
 	private static final int SCROLL_BAR_ALPHA_ROLLOVER = 100;
 	private static final int SCROLL_BAR_ALPHA = 50;
 	private static final int THUMB_SIZE = 8;
-	private static final int SCROLLBAR_SIZE = 10;
-	private static final Color THUMB_COLOR = Color.BLACK;
+	public static final int SCROLLBAR_SIZE = 10;
+	private static final Color THUMB_COLOR = Color.WHITE;
 
 	public ModernScrollPane(Component view) {
 		this(view, VERTICAL_SCROLLBAR_AS_NEEDED, HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -39,7 +35,6 @@ public class ModernScrollPane extends JScrollPane {
 		horizontalScrollBar.setUI(new ModernScrollBarUI(this));
 
 		setLayout(new ScrollPaneLayout() {
-			private static final long serialVersionUID = 5740408979909014146L;
 
 			@Override
 			public void layoutContainer(Container parent) {
@@ -94,13 +89,13 @@ public class ModernScrollPane extends JScrollPane {
 	private boolean isVerticalScrollBarfNecessary() {
 		Rectangle viewRect = viewport.getViewRect();
 		Dimension viewSize = viewport.getViewSize();
-		return viewSize.getHeight() >= viewRect.getHeight();
+		return viewSize.getHeight() > viewRect.getHeight();
 	}
 
 	private boolean isHorizontalScrollBarNecessary() {
 		Rectangle viewRect = viewport.getViewRect();
 		Dimension viewSize = viewport.getViewSize();
-		return viewSize.getWidth() >= viewRect.getWidth();
+		return viewSize.getWidth() > viewRect.getWidth();
 	}
 
 	private static class ModernScrollBarUI extends BasicScrollBarUI {
@@ -159,9 +154,6 @@ public class ModernScrollPane extends JScrollPane {
 		 * Invisible Buttons, to hide scroll bar buttons
 		 */
 		private static class InvisibleScrollBarButton extends JButton {
-
-			@Serial
-			private static final long serialVersionUID = 1552427919226628689L;
 
 			private InvisibleScrollBarButton() {
 				setOpaque(false);
