@@ -161,7 +161,7 @@ public class MainWindow extends JFrame {
     }
 
     private void chooseAndOpenFile() {
-        Optional<String> pathOpt = chooseFileAndGetPath();
+        Optional<String> pathOpt = chooseFileAndGetLocalPath();
         if (pathOpt.isEmpty()) {
             return;
         }
@@ -174,7 +174,7 @@ public class MainWindow extends JFrame {
         }
     }
 
-    private Optional<String> chooseFileAndGetPath() {
+    private Optional<String> chooseFileAndGetLocalPath() {
         FileDialog dialog = new FileDialog((Frame)null, "Select file to open");
         dialog.setMode(FileDialog.LOAD);
         dialog.setVisible(true);
@@ -182,10 +182,12 @@ public class MainWindow extends JFrame {
         String path = dialog.getDirectory() + dialog.getFile();
         dialog.dispose();
 
-        if ("nullnull".equals(path)) {
+        if (dialog.getFile() == null) {
             return Optional.empty();
         }
 
+        // This line changes global path to a local project path. It is needed because the need for paths being
+        // uniform, as they are used as keys for files
         return Optional.of(path.substring(System.getProperty("user.dir").length() + 1));
     }
 
@@ -197,35 +199,17 @@ public class MainWindow extends JFrame {
         JMenu sharing = new JMenu("Sharing");
 
         JMenuItem openMenuItem = new JMenuItem("Open");
-        openMenuItem.addActionListener(e -> {
-            chooseAndOpenFile();
-        });
+        openMenuItem.addActionListener(e -> chooseAndOpenFile());
 
         JMenuItem saveMenuItem = new JMenuItem("Save");
-        saveMenuItem.addActionListener(e -> {
-            saveCurrentFile();
-        });
+        saveMenuItem.addActionListener(e -> saveCurrentFile());
 
         JMenuItem hostMenuItem = new JMenuItem("Host");
         MainWindow mainWindow = this;
-        hostMenuItem.addActionListener(e -> {
-            EventQueue.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    new SharingPopup(SharingPopup.SharingType.HOST, mainWindow);
-                }
-            });
-        });
+        hostMenuItem.addActionListener(e -> EventQueue.invokeLater(() -> new SharingPopup(SharingPopup.SharingType.HOST, mainWindow)));
 
         JMenuItem joinMenuItem = new JMenuItem("Join");
-        joinMenuItem.addActionListener(e -> {
-            EventQueue.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    new SharingPopup(SharingPopup.SharingType.JOIN, mainWindow);
-                }
-            });
-        });
+        joinMenuItem.addActionListener(e -> EventQueue.invokeLater(() -> new SharingPopup(SharingPopup.SharingType.JOIN, mainWindow)));
 
         file.add(openMenuItem);
         file.add(saveMenuItem);
