@@ -30,8 +30,16 @@ public class Host extends Typewriter {
                 }
                 else if (message.getType() == R2UMessage.R2U.TEXT && message.getData()[0] == 'h') {
                     // message for host
-                    String content = new String(message.getData()).substring(2);
-                    client.getTxBuffer().send(new U2RBrod("tw" + message.getFromUid() + " " + content, -1), false);
+                    if (new String(message.getData()).startsWith("hw")) {
+                        // write command
+                        String content = new String(message.getData()).substring(2);
+                        client.getTxBuffer().send(new U2RBrod("tw" + message.getFromUid() + " " + content, -1), false);
+                    }
+                    else if (new String(message.getData()).startsWith("hr")) {
+                        // remove command
+                        String content = new String(message.getData()).substring(2);
+                        client.getTxBuffer().send(new U2RBrod("tr" + message.getFromUid() + " " + content, -1), false);
+                    }
                 }
                 else if (message.getType() == R2UMessage.R2U.JOIN) {
                     // new client joined, send host welcome message

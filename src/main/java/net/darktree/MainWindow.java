@@ -140,10 +140,14 @@ public class MainWindow extends JFrame {
                 if (message.getType() == R2UMessage.R2U.MADE) {
                     if (message.getData()[4] == URPClientHelper.JOIN_SUCCESS) {
                         this.currentDocument.clear();
-                        this.typewriter = new Typewriter(client, (offset, str) -> {
+                        this.typewriter = new Typewriter(client, (offset, str, len) -> {
                             SwingUtilities.invokeLater(() -> {
                                 try {
-                                    currentDocument.remoteInsert(offset, str);
+                                    if (len >= 0) {
+                                        currentDocument.remoteInsert(offset, str);
+                                    } else {
+                                        currentDocument.remoteRemove(offset, -len);
+                                    }
                                 } catch (BadLocationException e) {
                                     //e.printStackTrace();
                                 }
@@ -151,9 +155,14 @@ public class MainWindow extends JFrame {
                             });
                         });
 
-                        this.currentDocument.setOnTypedCallback((offset, str) -> {
-                            typewriter.write(offset, str);
-                            System.out.println("Me: Offset: " + offset + " Text: " + str);
+                        this.currentDocument.setOnTypedCallback((offset, str, len) -> {
+                            if (len >= 0) {
+                                typewriter.write(offset, str);
+                                System.out.println("Me: Offset: " + offset + " Text: " + str);
+                            } else {
+                                typewriter.remove(offset, -len);
+                                System.out.println("Me: Offset: " + offset + " Remove: " + -len);
+                            }
                         });
 
                         typewriter.listen();
@@ -199,10 +208,14 @@ public class MainWindow extends JFrame {
                 R2UMessage message = client.getRxBuffer().receive(true);
                 if (message.getType() == R2UMessage.R2U.MADE) {
                     if (message.getData()[4] == URPClientHelper.MAKE_SUCCESS) {
-                        this.typewriter = new Host(client, (offset, str) -> {
+                        this.typewriter = new Host(client, (offset, str, len) -> {
                             SwingUtilities.invokeLater(() -> {
                                 try {
-                                    currentDocument.remoteInsert(offset, str);
+                                    if (len >= 0) {
+                                        currentDocument.remoteInsert(offset, str);
+                                    } else {
+                                        currentDocument.remoteRemove(offset, -len);
+                                    }
                                 } catch (BadLocationException e) {
                                     //e.printStackTrace();
                                 }
@@ -216,9 +229,14 @@ public class MainWindow extends JFrame {
                             }
                         });
 
-                        this.currentDocument.setOnTypedCallback((offset, str) -> {
-                            typewriter.write(offset, str);
-                            System.out.println("Me: Offset: " + offset + " Text: " + str);
+                        this.currentDocument.setOnTypedCallback((offset, str, len) -> {
+                            if (len >= 0) {
+                                typewriter.write(offset, str);
+                                System.out.println("Me: Offset: " + offset + " Text: " + str);
+                            } else {
+                                typewriter.remove(offset, -len);
+                                System.out.println("Me: Offset: " + offset + " Remove: " + -len);
+                            }
                         });
 
                         typewriter.listen();

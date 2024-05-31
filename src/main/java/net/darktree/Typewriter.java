@@ -25,7 +25,7 @@ public class Typewriter {
             // t - typewriter is receiving this message, i - initialization
             if (message.getType() == R2UMessage.R2U.TEXT && new String(message.getData()).startsWith("ti")) {
                 hostUid = message.getFromUid();
-                onTyped.onTyped(0, new String(message.getData()).substring(2));
+                onTyped.onTyped(0, new String(message.getData()).substring(2), 0);
                 System.out.println("Host UID: " + hostUid);
                 break;
             }
@@ -38,24 +38,35 @@ public class Typewriter {
         client.getTxBuffer().send(new U2RSend(hostUid, command), false);
     }
 
+    public void remove(int offset, int length) {
+        // h - host is receiving this message, r - remove
+        String command = "hr" + offset + " " + length;
+        client.getTxBuffer().send(new U2RSend(hostUid, command), false);
+    }
+
     protected void update(R2UMessage message, OnTypedCallback callback) {
         int firstSpace = new String(message.getData()).indexOf(" ");
         int typedBy = Integer.parseInt(new String(message.getData()).substring(2, firstSpace));
         int secondSpace = new String(message.getData()).indexOf(" ", firstSpace + 1);
         int offset = Integer.parseInt(new String(message.getData()).substring(firstSpace + 1, secondSpace));
-
         String str = new String(message.getData());
         int zero = str.length();
         for (int i = str.length() - 1; i >= 0; i--) {
             if (str.charAt(i) == 0) {
                 zero = i;
-            }
-            else {
+            } else {
                 break;
             }
         }
         String text = str.substring(secondSpace + 1, zero);
-        callback.onTyped(offset, text);
+
+        if (new String(message.getData()).startsWith("tw")) {
+            callback.onTyped(offset, text, 0);
+        }
+        else if (new String(message.getData()).startsWith("tr")) {
+            int length = Integer.parseInt(text);
+            callback.onTyped(offset, "", -length);
+        }
     }
 
     public void listen() {
@@ -63,7 +74,7 @@ public class Typewriter {
             while (!listener.isInterrupted()) {
                 R2UMessage message = client.getRxBuffer().receive(true);
                 // t - typewriter is receiving this message, w - write
-                if (message.getType() == R2UMessage.R2U.TEXT && new String(message.getData()).startsWith("tw")) {
+                if (message.getType() == R2UMessage.R2U.TEXT) {
                     update(message, onTyped);
                 }
             }

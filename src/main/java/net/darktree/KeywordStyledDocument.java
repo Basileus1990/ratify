@@ -59,7 +59,7 @@ public class KeywordStyledDocument extends DefaultStyledDocument  {
 	public void insertString(int offset, String str, AttributeSet a) throws BadLocationException {
 		if (onTypedCallback != null){
 			// if the callback is set, typing is being handled by the callback
-			onTypedCallback.onTyped(offset, str);
+			onTypedCallback.onTyped(offset, str, str.length());
 
 			// cursor is being moved to the end of the inserted text before the text is inserted
 			// helps to avoid the issue with the caret position during fast typing
@@ -82,14 +82,17 @@ public class KeywordStyledDocument extends DefaultStyledDocument  {
 
 	// This method is being invoked every time when user removes in the code panel
 	public void remove(int offs, int len) throws BadLocationException {
-		// super.insertString removes from codePanel. If it isn't called, no text will be removed
+		onTypedCallback.onTyped(offs, "", -len);
+	}
+
+	public void remoteRemove(int offs, int len) throws BadLocationException {
 		super.remove(offs, len);
 		refreshDocument();
 	}
 
 	public void clear() {
 		try {
-			remove(0, getLength());
+			super.remove(0, getLength());
 		} catch (BadLocationException e) {
 			e.printStackTrace();
 		}
