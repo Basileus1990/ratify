@@ -27,8 +27,14 @@ public class MainWindow extends JFrame {
 
     private final JPanel codePanelWrapper;
 
-    final int windowWidth = 1200;
-    final int windowHeight = 800;
+    private final int windowWidth = 1200;
+    private final int windowHeight = 800;
+
+    private Status status = Status.OFFLINE;
+
+
+    private String serverAddress;
+    private String groupJoinCode;
 
     private void registerLocalFont(String path) {
         try {
@@ -79,6 +85,54 @@ public class MainWindow extends JFrame {
 
         pack();
         setLocationRelativeTo(null);
+    }
+
+    public void setStatus(Status newStatus) {
+        status = newStatus;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public String getServerAddress() {
+        return serverAddress;
+    }
+
+    public void setServerAddress(String serverAddress) {
+        this.serverAddress = serverAddress;
+    }
+
+    public String getGroupJoinCode() {
+        return groupJoinCode;
+    }
+
+    public void setGroupJoinCode(String groupJoinCode) {
+        this.groupJoinCode = groupJoinCode;
+    }
+
+    public void joinGroup(String joinCode, String serverAddress) {
+        setStatus(Status.IN_GROUP);
+        setGroupJoinCode(joinCode);
+        setServerAddress(serverAddress);
+    }
+
+    public void leaveGroup() {
+        setStatus(Status.OFFLINE);
+        groupJoinCode = null;
+        serverAddress = null;
+    }
+
+    public void hostGroup(String serverAddress) {
+        setStatus(Status.HOST);
+        setGroupJoinCode("123456789");
+        setServerAddress(serverAddress);
+    }
+
+    public void stopGroup() {
+        setStatus(Status.OFFLINE);
+        groupJoinCode = null;
+        serverAddress = null;
     }
 
     public void openFile(String path) throws IOException {
@@ -153,13 +207,24 @@ public class MainWindow extends JFrame {
         });
 
         JMenuItem hostMenuItem = new JMenuItem("Host");
+        MainWindow mainWindow = this;
         hostMenuItem.addActionListener(e -> {
-            System.out.println("Host");
+            EventQueue.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    new SharingPopup(SharingPopup.SharingType.HOST, mainWindow);
+                }
+            });
         });
 
         JMenuItem joinMenuItem = new JMenuItem("Join");
         joinMenuItem.addActionListener(e -> {
-            System.out.println("Join");
+            EventQueue.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    new SharingPopup(SharingPopup.SharingType.JOIN, mainWindow);
+                }
+            });
         });
 
         file.add(openMenuItem);
