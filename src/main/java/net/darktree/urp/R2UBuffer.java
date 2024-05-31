@@ -12,7 +12,7 @@ public class R2UBuffer {
         }
     }
 
-    public R2UMessage receive(boolean wait){
+    public synchronized R2UMessage receive(boolean wait){
         if (wait) {
             while (true) {
                 synchronized (messages) {

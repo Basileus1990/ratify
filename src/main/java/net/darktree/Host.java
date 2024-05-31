@@ -21,22 +21,26 @@ public class Host extends Typewriter {
 
     @Override
     public void listen() {
-        while (true){
-            R2UMessage message = client.getRxBuffer().receive(true);
-            if (message.getType() == R2UMessage.R2U.TEXT && message.getData()[0] == 't') {
-                // message for typewriter (client)
-                update(message, onTyped);
+        listener = new Thread(() -> {
+            while (!listener.isInterrupted()){
+                R2UMessage message = client.getRxBuffer().receive(true);
+                if (message.getType() == R2UMessage.R2U.TEXT && message.getData()[0] == 't') {
+                    // message for typewriter (client)
+                    update(message, onTyped);
+                }
+                else if (message.getType() == R2UMessage.R2U.TEXT && message.getData()[0] == 'h') {
+                    // message for host
+                    String content = new String(message.getData()).substring(2);
+                    client.getTxBuffer().send(new U2RBrod("tw" + message.getFromUid() + " " + content, -1), false);
+                }
+                else if (message.getType() == R2UMessage.R2U.JOIN) {
+                    // new client joined, send host welcome message
+                    String wholeText = getWholeText.getText();
+                    client.getTxBuffer().send(new U2RSend(message.getFromUid(), "ti" + wholeText), false);
+                    System.out.println("Sent welcome message to " + message.getFromUid());
+                }
             }
-            else if (message.getType() == R2UMessage.R2U.TEXT && message.getData()[0] == 'h') {
-                // message for host
-                String content = new String(message.getData()).substring(2);
-                client.getTxBuffer().send(new U2RBrod("tw" + message.getFromUid() + " " + content, -1), false);
-            }
-            else if (message.getType() == R2UMessage.R2U.JOIN) {
-                // new client joined, send host welcome message
-                String wholeText = getWholeText.getText();
-                client.getTxBuffer().send(new U2RSend(message.getFromUid(), "ti" + wholeText), false);
-            }
-        }
+        });
+        listener.start();
     }
 }

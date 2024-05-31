@@ -14,6 +14,9 @@ public class URPClientHelper {
         }
     }
 
+    public final static int MAKE_SUCCESS = 0x00;
+    public final static int JOIN_SUCCESS = 0x10;
+
     protected String madeCodeToString(byte code, int gid) {
         if (code == 0x00) return "Created group #" + gid;
         if (code == 0x10) return "Joined group #" + gid;

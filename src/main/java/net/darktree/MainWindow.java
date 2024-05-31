@@ -1,7 +1,15 @@
 package net.darktree;
 
+import net.darktree.urp.NetUtils;
+import net.darktree.urp.R2UMessage;
+import net.darktree.urp.URPClient;
+import net.darktree.urp.URPClientHelper;
+import net.darktree.urp.u2rmessage.U2RJoin;
+import net.darktree.urp.u2rmessage.U2RMake;
+
 import javax.swing.*;
 import javax.swing.plaf.basic.DefaultMenuLayout;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
@@ -9,6 +17,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.io.Console;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -33,8 +42,11 @@ public class MainWindow extends JFrame {
     private Status status = Status.OFFLINE;
 
 
-    private String serverAddress;
+    private String serverAddress = "localhost";
     private String groupJoinCode;
+
+    private URPClient client = null;
+    private Typewriter typewriter = null;
 
     private void registerLocalFont(String path) {
         try {
@@ -112,24 +124,125 @@ public class MainWindow extends JFrame {
     }
 
     public void joinGroup(String joinCode, String serverAddress) {
-        setStatus(Status.IN_GROUP);
-        setGroupJoinCode(joinCode);
-        setServerAddress(serverAddress);
+        if (typewriter != null) {
+            typewriter.close();
+        }
+        if (client != null) {
+            client.close();
+        }
+        client = new URPClient(serverAddress);
+        client.waitForConnection(5000);
+
+        if (client.isConnected()) {
+            client.getTxBuffer().send(new U2RJoin(Integer.parseInt(joinCode), 0), false);
+            while (true) {
+                R2UMessage message = client.getRxBuffer().receive(true);
+                if (message.getType() == R2UMessage.R2U.MADE) {
+                    if (message.getData()[4] == URPClientHelper.JOIN_SUCCESS) {
+                        this.currentDocument.clear();
+                        this.typewriter = new Typewriter(client, (offset, str) -> {
+                            SwingUtilities.invokeLater(() -> {
+                                try {
+                                    currentDocument.remoteInsert(offset, str);
+                                } catch (BadLocationException e) {
+                                    //e.printStackTrace();
+                                }
+                                System.out.println("Other: Offset: " + offset + " Text: " + str);
+                            });
+                        });
+
+                        this.currentDocument.setOnTypedCallback((offset, str) -> {
+                            typewriter.write(offset, str);
+                            System.out.println("Me: Offset: " + offset + " Text: " + str);
+                        });
+
+                        typewriter.listen();
+
+                        setStatus(Status.IN_GROUP);
+                        setGroupJoinCode(joinCode);
+                        setServerAddress(serverAddress);
+                    }
+                    break;
+                }
+            }
+        }
     }
 
     public void leaveGroup() {
+        if (typewriter != null) {
+            typewriter.close();
+            typewriter = null;
+        }
+        if (client != null) {
+            client.close();
+            client = null;
+        }
+
         setStatus(Status.OFFLINE);
         groupJoinCode = null;
         serverAddress = null;
     }
 
     public void hostGroup(String serverAddress) {
-        setStatus(Status.HOST);
-        setGroupJoinCode("123456789");
-        setServerAddress(serverAddress);
+        if (typewriter != null) {
+            typewriter.close();
+        }
+        if (client != null) {
+            client.close();
+        }
+        client = new URPClient(serverAddress);
+        client.waitForConnection(5000);
+
+        if (client.isConnected()) {
+            client.getTxBuffer().send(new U2RMake(), false);
+            while (true){
+                R2UMessage message = client.getRxBuffer().receive(true);
+                if (message.getType() == R2UMessage.R2U.MADE) {
+                    if (message.getData()[4] == URPClientHelper.MAKE_SUCCESS) {
+                        this.typewriter = new Host(client, (offset, str) -> {
+                            SwingUtilities.invokeLater(() -> {
+                                try {
+                                    currentDocument.remoteInsert(offset, str);
+                                } catch (BadLocationException e) {
+                                    //e.printStackTrace();
+                                }
+                                System.out.println("Other: Offset: " + offset + " Text: " + str);
+                            });
+                        }, () -> {
+                            try {
+                                return currentDocument.getText(0, currentDocument.getLength());
+                            } catch (BadLocationException e) {
+                                return "";
+                            }
+                        });
+
+                        this.currentDocument.setOnTypedCallback((offset, str) -> {
+                            typewriter.write(offset, str);
+                            System.out.println("Me: Offset: " + offset + " Text: " + str);
+                        });
+
+                        typewriter.listen();
+
+                        setGroupJoinCode(String.valueOf(NetUtils.readIntLE(message.getData(), 0)));
+                        setServerAddress(serverAddress);
+                        setStatus(Status.HOST);
+                    }
+                    break;
+                }
+            }
+        }
     }
 
     public void stopGroup() {
+        if (typewriter != null) {
+            typewriter.close();
+            typewriter = null;
+        }
+        if (client != null) {
+            client.close();
+            client = null;
+        }
+
         setStatus(Status.OFFLINE);
         groupJoinCode = null;
         serverAddress = null;

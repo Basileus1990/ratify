@@ -140,8 +140,8 @@ public class URPClient extends URPClientHelper {
                         System.out.println("Setting '" + key + "' is set to '" + val + "'");
 
                         byte[] valBuffer = new byte[8];
-                        NetUtils.writeIntLE(valBuffer, val,0);
-                        NetUtils.writeIntLE(valBuffer, key, 4);
+                        NetUtils.writeIntLE(valBuffer, 0,val);
+                        NetUtils.writeIntLE(valBuffer, 4, key);
                         r2u.addMessage(new R2UMessage(R2UMessage.R2U.VALS, -1, valBuffer));
                     }
                     case MADE -> {
@@ -149,7 +149,10 @@ public class URPClient extends URPClientHelper {
                         int madeGid = NetUtils.readIntLE(dataIn);
                         System.out.println(madeCodeToString(madeStatus, madeGid));
 
-                        r2u.addMessage(new R2UMessage(R2UMessage.R2U.MADE, madeStatus, new byte[]{(byte) madeGid}));
+                        byte[] madeBuffer = new byte[5];
+                        NetUtils.writeIntLE(madeBuffer, 0, madeGid);
+                        madeBuffer[4] = madeStatus;
+                        r2u.addMessage(new R2UMessage(R2UMessage.R2U.MADE, -1, madeBuffer));
                     }
                     case TEXT -> {
                         int textUid = NetUtils.readIntLE(dataIn);
@@ -167,7 +170,7 @@ public class URPClient extends URPClientHelper {
 
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             connected = false;
         }
     }
