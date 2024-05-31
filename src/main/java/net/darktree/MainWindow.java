@@ -140,11 +140,11 @@ public class MainWindow extends JFrame {
                 if (message.getType() == R2UMessage.R2U.MADE) {
                     if (message.getData()[4] == URPClientHelper.JOIN_SUCCESS) {
                         this.currentDocument.clear();
-                        this.typewriter = new Typewriter(client, (offset, str, len) -> {
+                        this.typewriter = new Typewriter(client, (offset, str, len, move) -> {
                             SwingUtilities.invokeLater(() -> {
                                 try {
                                     if (len >= 0) {
-                                        currentDocument.remoteInsert(offset, str);
+                                        currentDocument.remoteInsert(offset, str, move);
                                     } else {
                                         currentDocument.remoteRemove(offset, -len);
                                     }
@@ -155,7 +155,7 @@ public class MainWindow extends JFrame {
                             });
                         });
 
-                        this.currentDocument.setOnTypedCallback((offset, str, len) -> {
+                        this.currentDocument.setOnTypedCallback((offset, str, len, move) -> {
                             if (len >= 0) {
                                 typewriter.write(offset, str);
                                 System.out.println("Me: Offset: " + offset + " Text: " + str);
@@ -208,11 +208,11 @@ public class MainWindow extends JFrame {
                 R2UMessage message = client.getRxBuffer().receive(true);
                 if (message.getType() == R2UMessage.R2U.MADE) {
                     if (message.getData()[4] == URPClientHelper.MAKE_SUCCESS) {
-                        this.typewriter = new Host(client, (offset, str, len) -> {
+                        this.typewriter = new Host(client, (offset, str, len,move) -> {
                             SwingUtilities.invokeLater(() -> {
                                 try {
                                     if (len >= 0) {
-                                        currentDocument.remoteInsert(offset, str);
+                                        currentDocument.remoteInsert(offset, str, move);
                                     } else {
                                         currentDocument.remoteRemove(offset, -len);
                                     }
@@ -229,7 +229,7 @@ public class MainWindow extends JFrame {
                             }
                         });
 
-                        this.currentDocument.setOnTypedCallback((offset, str, len) -> {
+                        this.currentDocument.setOnTypedCallback((offset, str, len, move) -> {
                             if (len >= 0) {
                                 typewriter.write(offset, str);
                                 System.out.println("Me: Offset: " + offset + " Text: " + str);

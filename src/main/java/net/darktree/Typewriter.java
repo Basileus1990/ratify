@@ -25,7 +25,7 @@ public class Typewriter {
             // t - typewriter is receiving this message, i - initialization
             if (message.getType() == R2UMessage.R2U.TEXT && new String(message.getData()).startsWith("ti")) {
                 hostUid = message.getFromUid();
-                onTyped.onTyped(0, new String(message.getData()).substring(2), 0);
+                onTyped.onTyped(0, new String(message.getData()).substring(2), 0, false);
                 System.out.println("Host UID: " + hostUid);
                 break;
             }
@@ -59,13 +59,14 @@ public class Typewriter {
             }
         }
         String text = str.substring(secondSpace + 1, zero);
+        boolean moveCursor = typedBy != client.getUid();
 
         if (new String(message.getData()).startsWith("tw")) {
-            callback.onTyped(offset, text, 0);
+            callback.onTyped(offset, text, 0, moveCursor);
         }
         else if (new String(message.getData()).startsWith("tr")) {
             int length = Integer.parseInt(text);
-            callback.onTyped(offset, "", -length);
+            callback.onTyped(offset, "", -length, moveCursor);
         }
     }
 
