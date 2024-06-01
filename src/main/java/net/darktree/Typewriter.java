@@ -25,7 +25,9 @@ public class Typewriter {
             // t - typewriter is receiving this message, i - initialization
             if (message.getType() == R2UMessage.R2U.TEXT && new String(message.getData()).startsWith("ti")) {
                 hostUid = message.getFromUid();
-                onTyped.onTyped(0, new String(message.getData()).substring(2), 0, false);
+                String wholeText = new String(message.getData());
+                wholeText = wholeText.substring(2, wholeText.length() - 1);
+                onTyped.onTyped(0, wholeText, 0, false);
                 System.out.println("Host UID: " + hostUid);
                 break;
             }

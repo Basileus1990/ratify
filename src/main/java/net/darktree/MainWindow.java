@@ -123,7 +123,7 @@ public class MainWindow extends JFrame {
         this.groupJoinCode = groupJoinCode;
     }
 
-    public void joinGroup(String joinCode, String serverAddress) {
+    public boolean joinGroup(String joinCode, String serverAddress) {
         if (typewriter != null) {
             typewriter.close();
         }
@@ -146,7 +146,7 @@ public class MainWindow extends JFrame {
                                     if (len >= 0) {
                                         currentDocument.remoteInsert(offset, str, move);
                                     } else {
-                                        currentDocument.remoteRemove(offset, -len);
+                                        currentDocument.remoteRemove(offset, -len, move);
                                     }
                                 } catch (BadLocationException e) {
                                     //e.printStackTrace();
@@ -174,10 +174,14 @@ public class MainWindow extends JFrame {
                     break;
                 }
             }
+            return true;
+        }
+        else{
+            return false;
         }
     }
 
-    public void leaveGroup() {
+    public boolean leaveGroup() {
         if (typewriter != null) {
             typewriter.close();
             typewriter = null;
@@ -187,12 +191,15 @@ public class MainWindow extends JFrame {
             client = null;
         }
 
+        this.currentDocument.setOnTypedCallback(null);
+
         setStatus(Status.OFFLINE);
         groupJoinCode = null;
         serverAddress = null;
+        return true;
     }
 
-    public void hostGroup(String serverAddress) {
+    public boolean hostGroup(String serverAddress) {
         if (typewriter != null) {
             typewriter.close();
         }
@@ -214,7 +221,7 @@ public class MainWindow extends JFrame {
                                     if (len >= 0) {
                                         currentDocument.remoteInsert(offset, str, move);
                                     } else {
-                                        currentDocument.remoteRemove(offset, -len);
+                                        currentDocument.remoteRemove(offset, -len, move);
                                     }
                                 } catch (BadLocationException e) {
                                     //e.printStackTrace();
@@ -248,22 +255,11 @@ public class MainWindow extends JFrame {
                     break;
                 }
             }
+            return true;
         }
-    }
-
-    public void stopGroup() {
-        if (typewriter != null) {
-            typewriter.close();
-            typewriter = null;
+        else{
+            return false;
         }
-        if (client != null) {
-            client.close();
-            client = null;
-        }
-
-        setStatus(Status.OFFLINE);
-        groupJoinCode = null;
-        serverAddress = null;
     }
 
     public void openFile(String path) throws IOException {
@@ -340,11 +336,24 @@ public class MainWindow extends JFrame {
 
             setServerAddress("" + relay);
 
-            if (code != null) {
-                setGroupJoinCode(code);
+            boolean success = false;
+            if (type == SharingAction.JOIN) {
+                if (code != null) {
+                    success = joinGroup(code, "" + relay);
+                }
+            } else if (type == SharingAction.HOST) {
+                success = hostGroup("" + relay);
+            } else if (type == SharingAction.LEAVE) {
+                success = leaveGroup();
             }
 
-            setStatus(type == SharingAction.HOST ? Status.HOST : Status.IN_GROUP);
+            // popup message box with success/failure
+            System.out.println("Sharing success: " + success);
+            if (type == SharingAction.LEAVE) {
+                JOptionPane.showMessageDialog(this, "Left the group", "Connection Status", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, success ? "Connection successful" : "Connection failed", "Connection Status", JOptionPane.INFORMATION_MESSAGE);
+            }
         })));
 
         JMenuItem exitMenuItem = new JMenuItem("Exit");

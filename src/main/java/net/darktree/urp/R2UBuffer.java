@@ -20,7 +20,7 @@ public class R2UBuffer {
                         try {
                             messages.wait();
                         } catch (InterruptedException e) {
-                            e.printStackTrace();
+                            //e.printStackTrace();
                         }
                     }
 

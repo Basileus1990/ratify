@@ -8,7 +8,7 @@ import java.net.Socket;
 import java.util.Scanner;
 
 public class URPClient extends URPClientHelper {
-    private final int port = 9686;
+    //private final int port = 9686;
     private Socket socket = null;
     private DataInputStream dataIn = null;
     private DataOutputStream dataOut = null;
@@ -21,7 +21,7 @@ public class URPClient extends URPClientHelper {
     public URPClient(String hostname) {
         // initialize websocket connection
         try {
-            socket = new Socket(hostname, port);
+            socket = new Socket(hostname.split(":")[0], hostname.split(":").length > 1 ? Integer.parseInt(hostname.split(":")[1]) : 9686);
             dataIn = new DataInputStream(socket.getInputStream());
             dataOut = new DataOutputStream(socket.getOutputStream());
         } catch (Exception e) {
@@ -29,7 +29,7 @@ public class URPClient extends URPClientHelper {
             return;
         }
 
-        System.out.println("Successfully made connection to " + hostname + ":" + port);
+        System.out.println("Successfully made connection to " + hostname);
 
         r2u = new R2UBuffer();
 

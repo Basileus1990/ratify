@@ -63,7 +63,7 @@ public class KeywordStyledDocument extends DefaultStyledDocument  {
 
 			// cursor is being moved to the end of the inserted text before the text is inserted
 			// helps to avoid the issue with the caret position during fast typing
-			codePanel.getPane().setCaretPosition(offset + str.length());
+			codePanel.getPane().setCaretPosition(Math.min(offset + str.length(), getLength()));
 		}
 		else {
 			// if the callback is not set, typing is being handled by the document
@@ -86,12 +86,26 @@ public class KeywordStyledDocument extends DefaultStyledDocument  {
 
 	// This method is being invoked every time when user removes in the code panel
 	public void remove(int offs, int len) throws BadLocationException {
-		onTypedCallback.onTyped(offs, "", -len, false);
+		if (onTypedCallback != null){
+			// if the callback is set, removing is being handled by the callback
+			onTypedCallback.onTyped(offs, "", -len, false);
+
+			codePanel.getPane().setCaretPosition(offs);
+		}
+		else {
+			// if the callback is not set, removing is being handled by the document
+			super.remove(offs, len);
+			refreshDocument();
+		}
 	}
 
-	public void remoteRemove(int offs, int len) throws BadLocationException {
+	public void remoteRemove(int offs, int len, boolean moveCursor) throws BadLocationException {
+		int oldCaretPosition = codePanel.getPane().getCaretPosition();
 		super.remove(offs, len);
 		refreshDocument();
+		if (!moveCursor) {
+			codePanel.getPane().setCaretPosition(oldCaretPosition);
+		}
 	}
 
 	public void clear() {
