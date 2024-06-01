@@ -1,7 +1,7 @@
 package net.darktree;
 
-import net.darktree.urp.UrpMessage;
 import net.darktree.urp.UrpClient;
+import net.darktree.urp.UrpMessage;
 
 public class Host extends Typewriter {
 	private final OnGetTextCallback getWholeText;

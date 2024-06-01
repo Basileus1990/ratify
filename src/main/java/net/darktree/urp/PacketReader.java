@@ -13,7 +13,7 @@ public class PacketReader {
 		}
 	}
 
-	public synchronized UrpMessage receive(boolean wait){
+	public UrpMessage receive(boolean wait){
 		if (wait) {
 			while (true) {
 				synchronized (messages) {
@@ -31,8 +31,7 @@ public class PacketReader {
 					}
 				}
 			}
-		}
-		else{
+		} else {
 			synchronized (messages) {
 				return messages.poll();
 			}

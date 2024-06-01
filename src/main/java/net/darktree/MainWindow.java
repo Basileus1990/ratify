@@ -1,8 +1,8 @@
 package net.darktree;
 
 import net.darktree.urp.NetUtils;
-import net.darktree.urp.UrpMessage;
 import net.darktree.urp.UrpClient;
+import net.darktree.urp.UrpMessage;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.DefaultMenuLayout;
