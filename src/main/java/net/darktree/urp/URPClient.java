@@ -1,5 +1,8 @@
 package net.darktree.urp;
 
+import com.google.common.io.LittleEndianDataInputStream;
+import com.google.common.io.LittleEndianDataOutputStream;
+import net.darktree.RelayIdentifier;
 import net.darktree.urp.u2rmessage.*;
 
 import java.io.DataInputStream;
@@ -7,29 +10,31 @@ import java.io.DataOutputStream;
 import java.net.Socket;
 import java.util.Scanner;
 
-public class URPClient extends URPClientHelper {
-	//private final int port = 9686;
+public class URPClient {
+
+	public final static int MAKE_SUCCESS = 0x00;
+	public final static int JOIN_SUCCESS = 0x10;
+
 	private Socket socket = null;
-	private DataInputStream dataIn = null;
-	private DataOutputStream dataOut = null;
+	private LittleEndianDataInputStream dataIn = null;
+	private LittleEndianDataOutputStream dataOut = null;
 	private Thread serverListenerThread = null;
 	private boolean connected = false;
 	private int uid = -1;
 	private R2UBuffer r2u;
 	private U2RBuffer u2r;
 
-	public URPClient(String hostname) {
-		// initialize websocket connection
+	public URPClient(RelayIdentifier address) {
 		try {
-			socket = new Socket(hostname.split(":")[0], hostname.split(":").length > 1 ? Integer.parseInt(hostname.split(":")[1]) : 9686);
-			dataIn = new DataInputStream(socket.getInputStream());
-			dataOut = new DataOutputStream(socket.getOutputStream());
+			socket = new Socket(address.getAddress(), address.getPort());
+			dataIn = new LittleEndianDataInputStream(socket.getInputStream());
+			dataOut = new LittleEndianDataOutputStream(socket.getOutputStream());
 		} catch (Exception e) {
 			System.out.println("Failed to open socket");
 			return;
 		}
 
-		System.out.println("Successfully made connection to " + hostname);
+		System.out.println("Successfully made connection to " + address);
 
 		r2u = new R2UBuffer();
 
@@ -90,9 +95,9 @@ public class URPClient extends URPClientHelper {
 
 				switch (id) {
 					case WELC -> {
-						int ver = NetUtils.readShortLE(dataIn);
-						int rev = NetUtils.readShortLE(dataIn);
-						uid = NetUtils.readIntLE(dataIn);
+						int ver = dataIn.readShort();
+						int rev = dataIn.readShort();
+						uid = dataIn.readInt();
 
 						byte[] message = new byte[65];
 						dataIn.read(message, 0, 64);
@@ -123,30 +128,30 @@ public class URPClient extends URPClientHelper {
 						r2u.addMessage(new R2UMessage(R2UMessage.R2U.STAT, -1, new byte[]{sta}));
 					}
 					case JOIN -> {
-						int joinUid = NetUtils.readIntLE(dataIn);
+						int joinUid = dataIn.readInt();
 						System.out.println("User #" + joinUid + " joined");
 
 						r2u.addMessage(new R2UMessage(R2UMessage.R2U.JOIN, joinUid, new byte[0]));
 					}
 					case LEFT -> {
-						int leftUid = NetUtils.readIntLE(dataIn);
+						int leftUid = dataIn.readInt();
 						System.out.println("User #" + leftUid + " left");
 
 						r2u.addMessage(new R2UMessage(R2UMessage.R2U.LEFT, leftUid, new byte[0]));
 					}
 					case VALS -> {
-						int key = NetUtils.readIntLE(dataIn);
-						int val = NetUtils.readIntLE(dataIn);
+						int key = dataIn.readInt();
+						int val = dataIn.readInt();
 						System.out.println("Setting '" + key + "' is set to '" + val + "'");
 
 						byte[] valBuffer = new byte[8];
-						NetUtils.writeIntLE(valBuffer, 0,val);
+						NetUtils.writeIntLE(valBuffer, 0, val);
 						NetUtils.writeIntLE(valBuffer, 4, key);
 						r2u.addMessage(new R2UMessage(R2UMessage.R2U.VALS, -1, valBuffer));
 					}
 					case MADE -> {
 						byte madeStatus = dataIn.readByte();
-						int madeGid = NetUtils.readIntLE(dataIn);
+						int madeGid = dataIn.readInt();
 						System.out.println(madeCodeToString(madeStatus, madeGid));
 
 						byte[] madeBuffer = new byte[5];
@@ -155,8 +160,8 @@ public class URPClient extends URPClientHelper {
 						r2u.addMessage(new R2UMessage(R2UMessage.R2U.MADE, -1, madeBuffer));
 					}
 					case TEXT -> {
-						int textUid = NetUtils.readIntLE(dataIn);
-						int textLen = NetUtils.readIntLE(dataIn);
+						int textUid = dataIn.readInt();
+						int textLen = dataIn.readInt();
 
 						byte[] textBuffer = new byte[textLen + 1];
 						dataIn.read(textBuffer, 0, textLen);
@@ -188,41 +193,24 @@ public class URPClient extends URPClientHelper {
 		}
 	}
 
-	public static void interactive() {
-		URPClient client = new URPClient("localhost");
+	public static String madeCodeToString(byte code, int gid) {
+		if (code == 0x00) return "Created group #" + gid;
+		if (code == 0x10) return "Joined group #" + gid;
 
-		while (!client.isConnected()) {
-			try {
-				Thread.sleep(10);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+		if ((code & 0xF0) > 0) {
+			return "Failed to join the given group!\n";
+		} else {
+			return "Failed to create group!\n";
 		}
-
-		Scanner scanner = new Scanner(System.in);
-		while (client.isConnected()) {
-			String line = scanner.nextLine();
-			if (line.equals("exit")) {
-				break;
-			} else if (line.startsWith("join")) {
-				int gid = Integer.parseInt(line.split(" ")[1]);
-				int pass = Integer.parseInt(line.split(" ")[2]);
-				client.getTxBuffer().send(new U2RJoin(gid, pass), true);
-			} else if (line.startsWith("quit")) {
-				client.getTxBuffer().send(new U2RQuit(), true);
-			} else if (line.equals("make")) {
-				client.getTxBuffer().send(new U2RMake(), true);
-			} else if (line.startsWith("brod")) {
-				String message = line.substring(5);
-				client.getTxBuffer().send(new U2RBrod(message, client.getUid()), true);
-			} else if (line.startsWith("send")) {
-				int uid = Integer.parseInt(line.split(" ")[1]);
-				String message = line.substring(6 + line.split(" ")[1].length());
-				client.getTxBuffer().send(new U2RSend(uid, message), true);
-			} else {
-				System.out.println("Unknown command");
-			}
-		}
-		client.close();
 	}
+
+	public static String roleToString(byte role) {
+		return switch (role) {
+			case 1 -> "connected";
+			case 2 -> "member";
+			case 4 -> "host";
+			default -> "<invalid value>";
+		};
+	}
+
 }

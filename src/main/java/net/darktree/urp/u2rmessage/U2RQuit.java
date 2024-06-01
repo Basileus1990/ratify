@@ -1,16 +1,14 @@
 package net.darktree.urp.u2rmessage;
 
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 
 public class U2RQuit implements U2RMessage {
-	public U2RQuit() {
-
-	}
 
 	@Override
-	public void send(DataOutputStream dataOut){
+	public void send(DataOutput buffer){
 		try {
-			dataOut.writeByte(0x02);
+			buffer.writeByte(0x02);
 		} catch (Exception e) {
 			System.out.println("Failed to send quit request");
 		}
@@ -20,4 +18,5 @@ public class U2RQuit implements U2RMessage {
 	public String toString() {
 		return "U2RQuit";
 	}
+
 }

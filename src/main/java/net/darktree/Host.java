@@ -6,9 +6,9 @@ import net.darktree.urp.u2rmessage.U2RBrod;
 import net.darktree.urp.u2rmessage.U2RSend;
 
 public class Host extends Typewriter {
-	private final OnGetTextCallack getWholeText;
+	private final OnGetTextCallback getWholeText;
 
-	public Host(URPClient client, OnTypedCallback onTyped, OnGetTextCallack getWholeText) {
+	public Host(URPClient client, OnTypedCallback onTyped, OnGetTextCallback getWholeText) {
 		super(client, onTyped);
 		this.getWholeText = getWholeText;
 	}

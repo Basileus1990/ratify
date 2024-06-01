@@ -2,6 +2,7 @@ package net.darktree.urp.u2rmessage;
 
 import net.darktree.urp.NetUtils;
 
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 
 public class U2RSend implements U2RMessage {
@@ -27,12 +28,12 @@ public class U2RSend implements U2RMessage {
 	}
 
 	@Override
-	public void send(DataOutputStream dataOut) {
+	public void send(DataOutput buffer) {
 		try {
-			dataOut.writeByte(0x04);
-			NetUtils.writeIntLE(dataOut, toUid);
-			NetUtils.writeIntLE(dataOut, data.length);
-			dataOut.write(data);
+			buffer.writeByte(0x04);
+			buffer.writeInt(toUid);
+			buffer.writeInt(data.length);
+			buffer.write(data);
 		} catch (Exception e) {
 			System.out.println("Failed to send message");
 		}

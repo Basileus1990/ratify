@@ -3,7 +3,6 @@ package net.darktree;
 import net.darktree.urp.NetUtils;
 import net.darktree.urp.R2UMessage;
 import net.darktree.urp.URPClient;
-import net.darktree.urp.URPClientHelper;
 import net.darktree.urp.u2rmessage.U2RJoin;
 import net.darktree.urp.u2rmessage.U2RMake;
 
@@ -41,7 +40,7 @@ public class MainWindow extends JFrame {
 	private Status status = Status.OFFLINE;
 
 
-	private String serverAddress = "localhost";
+	private RelayIdentifier relay = RelayIdentifier.getDefault("localhost");
 	private String groupJoinCode;
 
 	private URPClient client = null;
@@ -107,11 +106,11 @@ public class MainWindow extends JFrame {
 	}
 
 	public String getServerAddress() {
-		return serverAddress;
+		return relay == null ? "null" : relay.toString();
 	}
 
-	public void setServerAddress(String serverAddress) {
-		this.serverAddress = serverAddress;
+	public void setServerAddress(RelayIdentifier relay) {
+		this.relay = relay;
 	}
 
 	public String getGroupJoinCode() {
@@ -122,14 +121,14 @@ public class MainWindow extends JFrame {
 		this.groupJoinCode = groupJoinCode;
 	}
 
-	public boolean joinGroup(String joinCode, String serverAddress) {
+	public boolean joinGroup(String joinCode, RelayIdentifier identifier) {
 		if (typewriter != null) {
 			typewriter.close();
 		}
 		if (client != null) {
 			client.close();
 		}
-		client = new URPClient(serverAddress);
+		client = new URPClient(identifier);
 		client.waitForConnection(5000);
 
 		if (client.isConnected()) {
@@ -137,7 +136,7 @@ public class MainWindow extends JFrame {
 			while (true) {
 				R2UMessage message = client.getRxBuffer().receive(true);
 				if (message.getType() == R2UMessage.R2U.MADE) {
-					if (message.getData()[4] == URPClientHelper.JOIN_SUCCESS) {
+					if (message.getData()[4] == URPClient.JOIN_SUCCESS) {
 						this.currentDocument.clear();
 						this.typewriter = new Typewriter(client, (offset, str, len, move) -> {
 							SwingUtilities.invokeLater(() -> {
@@ -168,7 +167,7 @@ public class MainWindow extends JFrame {
 
 						setStatus(Status.IN_GROUP);
 						setGroupJoinCode(joinCode);
-						setServerAddress(serverAddress);
+						setServerAddress(identifier);
 					}
 					break;
 				}
@@ -194,18 +193,18 @@ public class MainWindow extends JFrame {
 
 		setStatus(Status.OFFLINE);
 		groupJoinCode = null;
-		serverAddress = null;
+		relay = null;
 		return true;
 	}
 
-	public boolean hostGroup(String serverAddress) {
+	public boolean hostGroup(RelayIdentifier identifier) {
 		if (typewriter != null) {
 			typewriter.close();
 		}
 		if (client != null) {
 			client.close();
 		}
-		client = new URPClient(serverAddress);
+		client = new URPClient(identifier);
 		client.waitForConnection(5000);
 
 		if (client.isConnected()) {
@@ -213,7 +212,7 @@ public class MainWindow extends JFrame {
 			while (true){
 				R2UMessage message = client.getRxBuffer().receive(true);
 				if (message.getType() == R2UMessage.R2U.MADE) {
-					if (message.getData()[4] == URPClientHelper.MAKE_SUCCESS) {
+					if (message.getData()[4] == URPClient.MAKE_SUCCESS) {
 						this.typewriter = new Host(client, (offset, str, len,move) -> {
 							SwingUtilities.invokeLater(() -> {
 								try {
@@ -248,7 +247,7 @@ public class MainWindow extends JFrame {
 						typewriter.listen();
 
 						setGroupJoinCode(String.valueOf(NetUtils.readIntLE(message.getData(), 0)));
-						setServerAddress(serverAddress);
+						setServerAddress(identifier);
 						setStatus(Status.HOST);
 					}
 					break;
@@ -333,15 +332,15 @@ public class MainWindow extends JFrame {
 		shareMenuItem.addActionListener(e -> EventQueue.invokeLater(() -> new SharingPopup(SharingAction.HOST, this, (type, relay, code) -> {
 			System.out.println("Sharing selection made, type='" + type + "' relay='" + relay + "' code='" + code + "'");
 
-			setServerAddress("" + relay);
+			setServerAddress(relay);
 
 			boolean success = false;
 			if (type == SharingAction.JOIN) {
 				if (code != null) {
-					success = joinGroup(code, "" + relay);
+					success = joinGroup(code, relay);
 				}
 			} else if (type == SharingAction.HOST) {
-				success = hostGroup("" + relay);
+				success = hostGroup(relay);
 			} else if (type == SharingAction.LEAVE) {
 				success = leaveGroup();
 			}

@@ -2,9 +2,11 @@ package net.darktree.urp.u2rmessage;
 
 import net.darktree.urp.NetUtils;
 
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 
 public class U2RSets implements U2RMessage {
+
 	private final int key;
 	private final int value;
 
@@ -14,11 +16,11 @@ public class U2RSets implements U2RMessage {
 	}
 
 	@Override
-	public void send(DataOutputStream dataOut){
+	public void send(DataOutput buffer){
 		try {
-			dataOut.writeByte(0x06);
-			NetUtils.writeIntLE(dataOut, key);
-			NetUtils.writeIntLE(dataOut, value);
+			buffer.writeByte(0x06);
+			buffer.writeInt(key);
+			buffer.writeInt(value);
 		} catch (Exception e) {
 			System.out.println("Failed to send sets request");
 		}
@@ -28,4 +30,5 @@ public class U2RSets implements U2RMessage {
 	public String toString() {
 		return "U2RSets{ key=" + key + ", value=" + value + '}';
 	}
+
 }

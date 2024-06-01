@@ -50,4 +50,9 @@ public class RelayIdentifier {
 	public String toString() {
 		return address + ":" + port;
 	}
+
+	public static RelayIdentifier getDefault(String address) {
+		return new RelayIdentifier(address, DEFAULT_PORT);
+	}
+
 }

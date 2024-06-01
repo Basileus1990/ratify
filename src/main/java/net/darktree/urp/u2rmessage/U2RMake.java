@@ -1,6 +1,6 @@
 package net.darktree.urp.u2rmessage;
 
-import java.io.DataOutputStream;
+import java.io.DataOutput;
 
 public class U2RMake implements U2RMessage {
 	public U2RMake() {
@@ -8,9 +8,9 @@ public class U2RMake implements U2RMessage {
 	}
 
 	@Override
-	public void send(DataOutputStream dataOut){
+	public void send(DataOutput buffer){
 		try {
-			dataOut.writeByte(0x00);
+			buffer.writeByte(0x00);
 		} catch (Exception e) {
 			System.out.println("Failed to send make request");
 		}

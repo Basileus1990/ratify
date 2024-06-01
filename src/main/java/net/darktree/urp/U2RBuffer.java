@@ -1,7 +1,9 @@
 package net.darktree.urp;
 
+import com.google.common.io.LittleEndianDataOutputStream;
 import net.darktree.urp.u2rmessage.U2RMessage;
 
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.util.LinkedList;
 
@@ -9,7 +11,7 @@ public class U2RBuffer {
 	private LinkedList<U2RMessage> messages = new LinkedList<>();
 	private Thread worker;
 
-	public U2RBuffer(DataOutputStream dataOut){
+	public U2RBuffer(DataOutput dataOut){
 		worker = new Thread(() -> {
 			while (true){
 				U2RMessage message = null;
@@ -56,7 +58,7 @@ public class U2RBuffer {
 			messages.notify();
 		}
 
-		if (wait){
+		if (wait) {
 			flush();
 		}
 	}

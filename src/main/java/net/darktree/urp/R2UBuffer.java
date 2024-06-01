@@ -3,6 +3,7 @@ package net.darktree.urp;
 import java.util.LinkedList;
 
 public class R2UBuffer {
+
 	private final LinkedList<R2UMessage> messages = new LinkedList<>();
 
 	public void addMessage(R2UMessage message) {
@@ -37,4 +38,5 @@ public class R2UBuffer {
 			}
 		}
 	}
+
 }

@@ -23,14 +23,4 @@ public class Main extends JFrame {
 		});
 	}
 
-	private static String getExampleText() {
-		String content = "Hello World!\n\n";
-		content += "SELECT * FROM Examples WHERE Ratify = TRUE;\n\n";
-
-		content += "Begin\n";
-		content += " . \n".repeat(32);
-		content += "End\n";
-
-		return content;
-	}
 }

@@ -2,9 +2,11 @@ package net.darktree.urp.u2rmessage;
 
 import net.darktree.urp.NetUtils;
 
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 
 public class U2RJoin implements U2RMessage {
+
 	public final int gid;
 	public final int pass;
 
@@ -14,11 +16,11 @@ public class U2RJoin implements U2RMessage {
 	}
 
 	@Override
-	public void send(DataOutputStream dataOut){
+	public void send(DataOutput buffer){
 		try {
-			dataOut.writeByte(0x01);
-			NetUtils.writeIntLE(dataOut, gid);
-			NetUtils.writeIntLE(dataOut, pass);
+			buffer.writeByte(0x01);
+			buffer.writeInt(gid);
+			buffer.writeInt(pass);
 		} catch (Exception e) {
 			System.out.println("Failed to send join request");
 		}
@@ -28,4 +30,5 @@ public class U2RJoin implements U2RMessage {
 	public String toString() {
 		return "U2RJoin{ gid=" + gid + ", pass=" + pass + '}';
 	}
+
 }

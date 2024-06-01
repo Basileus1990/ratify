@@ -1,7 +1,7 @@
 package net.darktree.urp.u2rmessage;
 
-import java.io.DataOutputStream;
+import java.io.DataOutput;
 
 public interface U2RMessage {
-	public void send(DataOutputStream dataOut);
+	void send(DataOutput dataOut);
 }
