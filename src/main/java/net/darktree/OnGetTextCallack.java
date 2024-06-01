@@ -1,5 +1,5 @@
 package net.darktree;
 
 public interface OnGetTextCallack {
-    public String getText();
+	public String getText();
 }

@@ -2,9 +2,7 @@ package net.darktree;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicScrollBarUI;
-
 import java.awt.*;
-import java.io.Serial;
 
 public class ModernScrollPane extends JScrollPane {
 	private static final int SCROLL_BAR_ALPHA_ROLLOVER = 100;

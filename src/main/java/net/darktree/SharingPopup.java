@@ -3,8 +3,6 @@ package net.darktree;
 import net.darktree.component.HintedTextField;
 
 import javax.swing.*;
-import javax.swing.border.BevelBorder;
-import javax.swing.event.CaretEvent;
 import java.awt.*;
 
 public class SharingPopup extends JFrame {

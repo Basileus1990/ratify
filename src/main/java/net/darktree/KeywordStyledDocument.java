@@ -1,13 +1,17 @@
 package net.darktree;
 
+import javax.swing.*;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.Style;
 import java.awt.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.List;
-import javax.swing.*;
-import javax.swing.text.*;
+import java.util.Set;
 
 // Represents edited document and its connection to a file
 public class KeywordStyledDocument extends DefaultStyledDocument  {

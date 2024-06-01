@@ -1,5 +1,5 @@
 package net.darktree;
 
 public interface OnTypedCallback {
-    public void onTyped(int offset, String text, int length, boolean moveCursor);
+	public void onTyped(int offset, String text, int length, boolean moveCursor);
 }
