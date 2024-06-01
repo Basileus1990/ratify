@@ -7,10 +7,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.List;
 import javax.swing.*;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.DefaultStyledDocument;
-import javax.swing.text.Style;
+import javax.swing.text.*;
 
 // Represents edited document and its connection to a file
 public class KeywordStyledDocument extends DefaultStyledDocument  {
@@ -19,6 +16,7 @@ public class KeywordStyledDocument extends DefaultStyledDocument  {
 	private final Style hightlightStyle;
 	private final CodePanel codePanel;
 	private final String filePath;
+	private OnTypedCallback onTypedCallback = null;
 
 	// TODO: set styles from a theme
 	private final static Set<String> KEYWORDS = Set.of(
@@ -44,6 +42,10 @@ public class KeywordStyledDocument extends DefaultStyledDocument  {
 		} catch (BadLocationException ignored) {}
 	}
 
+	void setOnTypedCallback(OnTypedCallback callback) {
+		this.onTypedCallback = callback;
+	}
+
 	public JPanel getPanel() {
 		return codePanel;
 	}
@@ -55,16 +57,63 @@ public class KeywordStyledDocument extends DefaultStyledDocument  {
 
 	// This method is being invoked every time when user writes in the code panel
 	public void insertString(int offset, String str, AttributeSet a) throws BadLocationException {
-		// super.insertString inserts the string into codePanel. If it isn't called, no new text will appear
-		super.insertString(offset, str, a);
+		if (onTypedCallback != null){
+			// if the callback is set, typing is being handled by the callback
+			onTypedCallback.onTyped(offset, str, str.length(), false);
+
+			// cursor is being moved to the end of the inserted text before the text is inserted
+			// helps to avoid the issue with the caret position during fast typing
+			codePanel.getPane().setCaretPosition(Math.min(offset + str.length(), getLength()));
+		}
+		else {
+			// if the callback is not set, typing is being handled by the document
+			super.insertString(offset, str, defaultStyle);
+			refreshDocument();
+		}
+	}
+
+	public void remoteInsert(int offset, String str, boolean moveCursor) throws BadLocationException {
+		int oldCaretPosition = codePanel.getPane().getCaretPosition();
+		super.insertString(offset, str, defaultStyle);
 		refreshDocument();
+		if (!moveCursor) {
+			codePanel.getPane().setCaretPosition(oldCaretPosition);
+		}
+		//if (offset + str.length() < codePanel.getPane().getCaretPosition()) {
+			//codePanel.getPane().setCaretPosition(codePanel.getPane().getCaretPosition() + str.length());
+		//}
 	}
 
 	// This method is being invoked every time when user removes in the code panel
 	public void remove(int offs, int len) throws BadLocationException {
-		// super.insertString removes from codePanel. If it isn't called, no text will be removed
+		if (onTypedCallback != null){
+			// if the callback is set, removing is being handled by the callback
+			onTypedCallback.onTyped(offs, "", -len, false);
+
+			codePanel.getPane().setCaretPosition(offs);
+		}
+		else {
+			// if the callback is not set, removing is being handled by the document
+			super.remove(offs, len);
+			refreshDocument();
+		}
+	}
+
+	public void remoteRemove(int offs, int len, boolean moveCursor) throws BadLocationException {
+		int oldCaretPosition = codePanel.getPane().getCaretPosition();
 		super.remove(offs, len);
 		refreshDocument();
+		if (!moveCursor) {
+			codePanel.getPane().setCaretPosition(oldCaretPosition);
+		}
+	}
+
+	public void clear() {
+		try {
+			super.remove(0, getLength());
+		} catch (BadLocationException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void save() throws IOException {

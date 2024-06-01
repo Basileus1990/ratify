@@ -1,7 +1,15 @@
 package net.darktree;
 
+import net.darktree.urp.NetUtils;
+import net.darktree.urp.R2UMessage;
+import net.darktree.urp.URPClient;
+import net.darktree.urp.URPClientHelper;
+import net.darktree.urp.u2rmessage.U2RJoin;
+import net.darktree.urp.u2rmessage.U2RMake;
+
 import javax.swing.*;
 import javax.swing.plaf.basic.DefaultMenuLayout;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
@@ -9,6 +17,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.io.Console;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -33,8 +42,11 @@ public class MainWindow extends JFrame {
     private Status status = Status.OFFLINE;
 
 
-    private String serverAddress;
+    private String serverAddress = "localhost";
     private String groupJoinCode;
+
+    private URPClient client = null;
+    private Typewriter typewriter = null;
 
     private void registerLocalFont(String path) {
         try {
@@ -111,28 +123,143 @@ public class MainWindow extends JFrame {
         this.groupJoinCode = groupJoinCode;
     }
 
-    public void joinGroup(String joinCode, String serverAddress) {
-        setStatus(Status.IN_GROUP);
-        setGroupJoinCode(joinCode);
-        setServerAddress(serverAddress);
+    public boolean joinGroup(String joinCode, String serverAddress) {
+        if (typewriter != null) {
+            typewriter.close();
+        }
+        if (client != null) {
+            client.close();
+        }
+        client = new URPClient(serverAddress);
+        client.waitForConnection(5000);
+
+        if (client.isConnected()) {
+            client.getTxBuffer().send(new U2RJoin(Integer.parseInt(joinCode), 0), false);
+            while (true) {
+                R2UMessage message = client.getRxBuffer().receive(true);
+                if (message.getType() == R2UMessage.R2U.MADE) {
+                    if (message.getData()[4] == URPClientHelper.JOIN_SUCCESS) {
+                        this.currentDocument.clear();
+                        this.typewriter = new Typewriter(client, (offset, str, len, move) -> {
+                            SwingUtilities.invokeLater(() -> {
+                                try {
+                                    if (len >= 0) {
+                                        currentDocument.remoteInsert(offset, str, move);
+                                    } else {
+                                        currentDocument.remoteRemove(offset, -len, move);
+                                    }
+                                } catch (BadLocationException e) {
+                                    //e.printStackTrace();
+                                }
+                                System.out.println("Other: Offset: " + offset + " Text: " + str);
+                            });
+                        });
+
+                        this.currentDocument.setOnTypedCallback((offset, str, len, move) -> {
+                            if (len >= 0) {
+                                typewriter.write(offset, str);
+                                System.out.println("Me: Offset: " + offset + " Text: " + str);
+                            } else {
+                                typewriter.remove(offset, -len);
+                                System.out.println("Me: Offset: " + offset + " Remove: " + -len);
+                            }
+                        });
+
+                        typewriter.listen();
+
+                        setStatus(Status.IN_GROUP);
+                        setGroupJoinCode(joinCode);
+                        setServerAddress(serverAddress);
+                    }
+                    break;
+                }
+            }
+            return true;
+        }
+        else{
+            return false;
+        }
     }
 
-    public void leaveGroup() {
+    public boolean leaveGroup() {
+        if (typewriter != null) {
+            typewriter.close();
+            typewriter = null;
+        }
+        if (client != null) {
+            client.close();
+            client = null;
+        }
+
+        this.currentDocument.setOnTypedCallback(null);
+
         setStatus(Status.OFFLINE);
         groupJoinCode = null;
         serverAddress = null;
+        return true;
     }
 
-    public void hostGroup(String serverAddress) {
-        setStatus(Status.HOST);
-        setGroupJoinCode("123456789");
-        setServerAddress(serverAddress);
-    }
+    public boolean hostGroup(String serverAddress) {
+        if (typewriter != null) {
+            typewriter.close();
+        }
+        if (client != null) {
+            client.close();
+        }
+        client = new URPClient(serverAddress);
+        client.waitForConnection(5000);
 
-    public void stopGroup() {
-        setStatus(Status.OFFLINE);
-        groupJoinCode = null;
-        serverAddress = null;
+        if (client.isConnected()) {
+            client.getTxBuffer().send(new U2RMake(), false);
+            while (true){
+                R2UMessage message = client.getRxBuffer().receive(true);
+                if (message.getType() == R2UMessage.R2U.MADE) {
+                    if (message.getData()[4] == URPClientHelper.MAKE_SUCCESS) {
+                        this.typewriter = new Host(client, (offset, str, len,move) -> {
+                            SwingUtilities.invokeLater(() -> {
+                                try {
+                                    if (len >= 0) {
+                                        currentDocument.remoteInsert(offset, str, move);
+                                    } else {
+                                        currentDocument.remoteRemove(offset, -len, move);
+                                    }
+                                } catch (BadLocationException e) {
+                                    //e.printStackTrace();
+                                }
+                                System.out.println("Other: Offset: " + offset + " Text: " + str);
+                            });
+                        }, () -> {
+                            try {
+                                return currentDocument.getText(0, currentDocument.getLength());
+                            } catch (BadLocationException e) {
+                                return "";
+                            }
+                        });
+
+                        this.currentDocument.setOnTypedCallback((offset, str, len, move) -> {
+                            if (len >= 0) {
+                                typewriter.write(offset, str);
+                                System.out.println("Me: Offset: " + offset + " Text: " + str);
+                            } else {
+                                typewriter.remove(offset, -len);
+                                System.out.println("Me: Offset: " + offset + " Remove: " + -len);
+                            }
+                        });
+
+                        typewriter.listen();
+
+                        setGroupJoinCode(String.valueOf(NetUtils.readIntLE(message.getData(), 0)));
+                        setServerAddress(serverAddress);
+                        setStatus(Status.HOST);
+                    }
+                    break;
+                }
+            }
+            return true;
+        }
+        else{
+            return false;
+        }
     }
 
     public void openFile(String path) throws IOException {
@@ -209,11 +336,24 @@ public class MainWindow extends JFrame {
 
             setServerAddress("" + relay);
 
-            if (code != null) {
-                setGroupJoinCode(code);
+            boolean success = false;
+            if (type == SharingAction.JOIN) {
+                if (code != null) {
+                    success = joinGroup(code, "" + relay);
+                }
+            } else if (type == SharingAction.HOST) {
+                success = hostGroup("" + relay);
+            } else if (type == SharingAction.LEAVE) {
+                success = leaveGroup();
             }
 
-            setStatus(type == SharingAction.HOST ? Status.HOST : Status.IN_GROUP);
+            // popup message box with success/failure
+            System.out.println("Sharing success: " + success);
+            if (type == SharingAction.LEAVE) {
+                JOptionPane.showMessageDialog(this, "Left the group", "Connection Status", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, success ? "Connection successful" : "Connection failed", "Connection Status", JOptionPane.INFORMATION_MESSAGE);
+            }
         })));
 
         JMenuItem exitMenuItem = new JMenuItem("Exit");

@@ -57,7 +57,7 @@ public class SharingPopup extends JFrame {
 
 		JTextField code = new HintedTextField("Join Code");
 		JButton button = new JButton(type.getLabel());
-		JTextField address = new HintedTextField("darktree.net:8696", "User Relay Address");
+		JTextField address = new HintedTextField("localhost:9686", "User Relay Address");
 
 		button.addActionListener(e -> {
 			// TODO ugly, replace later
