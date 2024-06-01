@@ -1,10 +1,8 @@
 package net.darktree;
 
 import net.darktree.urp.NetUtils;
-import net.darktree.urp.R2UMessage;
-import net.darktree.urp.URPClient;
-import net.darktree.urp.u2rmessage.U2RJoin;
-import net.darktree.urp.u2rmessage.U2RMake;
+import net.darktree.urp.UrpMessage;
+import net.darktree.urp.UrpClient;
 
 import javax.swing.*;
 import javax.swing.plaf.basic.DefaultMenuLayout;
@@ -43,7 +41,7 @@ public class MainWindow extends JFrame {
 	private RelayIdentifier relay = RelayIdentifier.getDefault("localhost");
 	private String groupJoinCode;
 
-	private URPClient client = null;
+	private UrpClient client = null;
 	private Typewriter typewriter = null;
 
 	private void registerLocalFont(String path) {
@@ -128,15 +126,15 @@ public class MainWindow extends JFrame {
 		if (client != null) {
 			client.close();
 		}
-		client = new URPClient(identifier);
+		client = new UrpClient(identifier);
 		client.waitForConnection(5000);
 
 		if (client.isConnected()) {
-			client.getTxBuffer().send(new U2RJoin(Integer.parseInt(joinCode), 0), false);
+			client.getTxBuffer().writeJoin(Integer.parseInt(joinCode), 0);
 			while (true) {
-				R2UMessage message = client.getRxBuffer().receive(true);
-				if (message.getType() == R2UMessage.R2U.MADE) {
-					if (message.getData()[4] == URPClient.JOIN_SUCCESS) {
+				UrpMessage message = client.getRxBuffer().receive(true);
+				if (message.getType() == UrpMessage.R2U_MADE) {
+					if (message.getData()[4] == UrpClient.JOIN_SUCCESS) {
 						this.currentDocument.clear();
 						this.typewriter = new Typewriter(client, (offset, str, len, move) -> {
 							SwingUtilities.invokeLater(() -> {
@@ -204,15 +202,15 @@ public class MainWindow extends JFrame {
 		if (client != null) {
 			client.close();
 		}
-		client = new URPClient(identifier);
+		client = new UrpClient(identifier);
 		client.waitForConnection(5000);
 
 		if (client.isConnected()) {
-			client.getTxBuffer().send(new U2RMake(), false);
+			client.getTxBuffer().writeMake();
 			while (true){
-				R2UMessage message = client.getRxBuffer().receive(true);
-				if (message.getType() == R2UMessage.R2U.MADE) {
-					if (message.getData()[4] == URPClient.MAKE_SUCCESS) {
+				UrpMessage message = client.getRxBuffer().receive(true);
+				if (message.getType() == UrpMessage.R2U_MADE) {
+					if (message.getData()[4] == UrpClient.MAKE_SUCCESS) {
 						this.typewriter = new Host(client, (offset, str, len,move) -> {
 							SwingUtilities.invokeLater(() -> {
 								try {

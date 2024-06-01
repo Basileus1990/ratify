@@ -1,5 +1,7 @@
 package net.darktree;
 
+import java.io.IOException;
+import java.net.Socket;
 import java.util.Optional;
 
 // move to the .net package
@@ -44,6 +46,10 @@ public class RelayIdentifier {
 
 	public short getPort() {
 		return port;
+	}
+
+	public Socket openConnection() throws IOException {
+		return new Socket(address, port);
 	}
 
 	@Override

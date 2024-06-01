@@ -1,17 +1,16 @@
 package net.darktree;
 
-import net.darktree.urp.R2UMessage;
-import net.darktree.urp.URPClient;
-import net.darktree.urp.u2rmessage.U2RSend;
+import net.darktree.urp.UrpMessage;
+import net.darktree.urp.UrpClient;
 
 
 public class Typewriter {
-	protected URPClient client;
+	protected UrpClient client;
 	protected int hostUid = -1;
 	protected OnTypedCallback onTyped;
 	protected Thread listener;
 
-	public Typewriter(URPClient client, OnTypedCallback onTyped) {
+	public Typewriter(UrpClient client, OnTypedCallback onTyped) {
 		this.client = client;
 		this.onTyped = onTyped;
 		initialize();
@@ -20,10 +19,10 @@ public class Typewriter {
 	protected void initialize() {
 		// wait for initialization message (hello) from host
 		while (true) {
-			R2UMessage message = client.getRxBuffer().receive(true);
+			UrpMessage message = client.getRxBuffer().receive(true);
 			// t - typewriter is receiving this message, i - initialization
-			if (message.getType() == R2UMessage.R2U.TEXT && new String(message.getData()).startsWith("ti")) {
-				hostUid = message.getFromUid();
+			if (message.getType() == UrpMessage.R2U_TEXT && new String(message.getData()).startsWith("ti")) {
+				hostUid = message.getSender();
 				String wholeText = new String(message.getData());
 				wholeText = wholeText.substring(2, wholeText.length() - 1);
 				onTyped.onTyped(0, wholeText, 0, false);
@@ -36,16 +35,16 @@ public class Typewriter {
 	public void write(int offset, String text) {
 		// h - host is receiving this message, w - write
 		String command = "hw" + offset + " " + text;
-		client.getTxBuffer().send(new U2RSend(hostUid, command), false);
+		client.getTxBuffer().writeSend(hostUid, command.getBytes());
 	}
 
 	public void remove(int offset, int length) {
 		// h - host is receiving this message, r - remove
 		String command = "hr" + offset + " " + length;
-		client.getTxBuffer().send(new U2RSend(hostUid, command), false);
+		client.getTxBuffer().writeSend(hostUid, command.getBytes());
 	}
 
-	protected void update(R2UMessage message, OnTypedCallback callback) {
+	protected void update(UrpMessage message, OnTypedCallback callback) {
 		int firstSpace = new String(message.getData()).indexOf(" ");
 		int typedBy = Integer.parseInt(new String(message.getData()).substring(2, firstSpace));
 		int secondSpace = new String(message.getData()).indexOf(" ", firstSpace + 1);
@@ -74,9 +73,9 @@ public class Typewriter {
 	public void listen() {
 		listener = new Thread(() -> {
 			while (!listener.isInterrupted()) {
-				R2UMessage message = client.getRxBuffer().receive(true);
+				UrpMessage message = client.getRxBuffer().receive(true);
 				// t - typewriter is receiving this message, w - write
-				if (message.getType() == R2UMessage.R2U.TEXT) {
+				if (message.getType() == UrpMessage.R2U_TEXT) {
 					update(message, onTyped);
 				}
 			}
