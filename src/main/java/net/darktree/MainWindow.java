@@ -306,7 +306,7 @@ public class MainWindow extends JFrame {
     }
 
     private Optional<String> chooseFileAndGetLocalPath() {
-        FileDialog dialog = new FileDialog((Frame)null, "Select file to open");
+        FileDialog dialog = new FileDialog(this, "Select file to open");
         dialog.setMode(FileDialog.LOAD);
         dialog.setVisible(true);
 
@@ -327,28 +327,35 @@ public class MainWindow extends JFrame {
         menuBar.setLayout(new DefaultMenuLayout(menuBar, BoxLayout.X_AXIS));
 
         JMenu file = new JMenu("File");
-        JMenu sharing = new JMenu("Sharing");
-
-        JMenuItem openMenuItem = new JMenuItem("Open");
-        openMenuItem.addActionListener(e -> chooseAndOpenFile());
 
         JMenuItem saveMenuItem = new JMenuItem("Save");
         saveMenuItem.addActionListener(e -> saveCurrentFile());
 
-        JMenuItem hostMenuItem = new JMenuItem("Host");
-        MainWindow mainWindow = this;
-        hostMenuItem.addActionListener(e -> EventQueue.invokeLater(() -> new SharingPopup(SharingPopup.SharingType.HOST, mainWindow)));
+        JMenuItem openMenuItem = new JMenuItem("Open...");
+        openMenuItem.addActionListener(e -> chooseAndOpenFile());
 
-        JMenuItem joinMenuItem = new JMenuItem("Join");
-        joinMenuItem.addActionListener(e -> EventQueue.invokeLater(() -> new SharingPopup(SharingPopup.SharingType.JOIN, mainWindow)));
+        JMenuItem shareMenuItem = new JMenuItem("Share...");
+        shareMenuItem.addActionListener(e -> EventQueue.invokeLater(() -> new SharingPopup(SharingAction.HOST, this, (type, relay, code) -> {
+            System.out.println("Sharing selection made, type='" + type + "' relay='" + relay + "' code='" + code + "'");
 
-        file.add(openMenuItem);
+            setServerAddress("" + relay);
+
+            if (code != null) {
+                setGroupJoinCode(code);
+            }
+
+            setStatus(type == SharingAction.HOST ? Status.HOST : Status.IN_GROUP);
+        })));
+
+        JMenuItem exitMenuItem = new JMenuItem("Exit");
+        saveMenuItem.addActionListener(e -> System.exit(0));
+
         file.add(saveMenuItem);
-        sharing.add(hostMenuItem);
-        sharing.add(joinMenuItem);
+        file.add(openMenuItem);
+        file.add(shareMenuItem);
+        file.add(exitMenuItem);
 
         menuBar.add(file);
-        menuBar.add(sharing);
         setJMenuBar(menuBar);
     }
 }
